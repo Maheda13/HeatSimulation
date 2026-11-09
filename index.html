@@ -86,6 +86,12 @@
           <span id="navQuiz" class="font-bold">Kuis</span>
         </button>
 
+        <!-- Button: Misi & Tugas Isian -->
+        <button id="btnMission" onclick="openModal('modalMisi')" class="btn-sidafi-secondary px-2.5 py-1 text-xs border-red-300 dark:border-red-800 bg-red-100/70 dark:bg-red-950/40 text-[#E5232B] font-bold shadow-xs hover:bg-red-200/60 dark:hover:bg-red-900/50" title="Langkah-Langkah Misi &amp; Tugas Isian Singkat">
+          <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+          <span id="navMission">Misi &amp; Tugas</span>
+        </button>
+
         <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 hidden sm:block"></div>
 
         <!-- Button: Ganti Bahasa (ID / EN) -->
@@ -145,7 +151,7 @@
                 class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-sky-500 text-white shadow-2xs">
                 <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
                 <span id="zoneTextFreezer">Freezer</span>
-                <span class="text-[9px] opacity-90 hidden sm:inline">(-10°C)</span>
+                <span class="text-[9px] opacity-90 hidden sm:inline">(-10&deg;C)</span>
               </button>
 
               <!-- Pilihan 2: Suhu Ruang -->
@@ -153,7 +159,7 @@
                 class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
                 <i data-lucide="thermometer-sun" class="w-3.5 h-3.5"></i>
                 <span id="zoneTextSuhuRuang">Suhu Ruang</span>
-                <span class="text-[9px] opacity-75 hidden sm:inline">(27°C)</span>
+                <span class="text-[9px] opacity-75 hidden sm:inline">(27&deg;C)</span>
               </button>
 
               <!-- Pilihan 3: Kompor -->
@@ -161,7 +167,7 @@
                 class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
                 <i data-lucide="flame" class="w-3.5 h-3.5"></i>
                 <span id="zoneTextKompor">Kompor</span>
-                <span class="text-[9px] opacity-75 hidden sm:inline">(150°C)</span>
+                <span id="zoneSubKompor" class="text-[9px] opacity-75 hidden sm:inline">(150&deg;C)</span>
               </button>
 
             </div>
@@ -212,7 +218,17 @@
             <span id="playLabel">Mulai</span>
           </button>
 
-          <!-- Pemilih Suhu Awal (Dropdown Preset + Input Angka Langsung) -->
+          <!-- Pilihan Zat Uji (Air, Besi, Mentega) -->
+          <div class="flex items-center gap-1">
+            <label id="labelSubstance" for="substanceSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Zat:</label>
+            <select id="substanceSelect" onchange="onSubstanceChange(this.value)" class="text-xs font-mono font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-1 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#E5232B]">
+              <option value="air" selected>💧 Air (H₂O)</option>
+              <option value="besi">⚙️ Besi (Fe)</option>
+              <option value="mentega">🧈 Mentega (Butter)</option>
+            </select>
+          </div>
+
+          <!-- Pemilih Suhu Awal (Dropdown Pilihan Suhu) -->
           <div class="flex items-center gap-1">
             <label id="labelInitialTemp" for="initialTempSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Suhu Awal:</label>
             <select id="initialTempSelect" onchange="onInitialTempChange(this.value)" class="text-xs font-mono font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-1 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#E5232B]">
@@ -236,13 +252,7 @@
                 <option value="110">110°C (Uap Panas)</option>
                 <option value="120">120°C (Uap Maksimal)</option>
               </optgroup>
-              <option value="custom">Kustom (°C)...</option>
             </select>
-            <!-- Input Angka Langsung / Kustom -->
-            <div id="customTempWrapper" class="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1 py-0.5 focus-within:border-[#E5232B]" title="Ketik suhu langsung (-20 s/d 120°C)">
-              <input type="number" id="customTempInput" min="-20" max="120" step="1" value="-10" onchange="onCustomTempInput(this.value)" class="w-10 text-xs font-mono font-bold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none text-right">
-              <span class="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 pl-0.5">°C</span>
-            </div>
           </div>
 
           <!-- Dropdown Pilihan Massa -->
@@ -536,6 +546,285 @@
         <button id="btnFinishQuiz" onclick="closeModal('modalKuis')" class="btn-sidafi-primary px-4 py-1.5 text-xs">
           Selesai
         </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: LANGKAH MISI & LEMBAR TUGAS ISIAN SINGKAT         -->
+  <!-- ======================================================== -->
+  <div id="modalMisi" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden modal-backdrop">
+    <div class="bg-white dark:bg-slate-900 rounded-xl max-w-2xl w-full p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-2xl modal-panel flex flex-col gap-3.5 max-h-[92vh] overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-red-100/80 dark:bg-red-950/60 text-[#E5232B] flex items-center justify-center shadow-xs">
+            <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="modalMisiTitle" class="font-display font-bold text-base text-slate-900 dark:text-white leading-tight">Misi Eksperimen &amp; Lembar Tugas Siswa</h3>
+            <span id="modalMisiSubtitle" class="text-[11px] text-slate-500 dark:text-slate-400">Petunjuk Penyelidikan Laboratorium &amp; Lembar Evaluasi Isian</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="missionScoreBadge" class="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-[#E5232B] px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 flex items-center gap-1 shadow-2xs">
+            <span id="missionScoreLabel">Skor:</span> <span id="missionScoreVal">0</span> / 100
+          </span>
+          <button onclick="closeModal('modalMisi')" class="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition" title="Tutup">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Navigation / Tabs for Misi and Tugas -->
+      <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 flex-shrink-0">
+        <button id="tabBtnMisiSteps" onclick="switchMissionTab('steps')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-red-500 text-white shadow-xs">
+          <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+          <span id="txtTabSteps">1. Langkah-Langkah Misi</span>
+        </button>
+        <button id="tabBtnMisiWorksheet" onclick="switchMissionTab('worksheet')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          <span id="txtTabTasks">2. Lembar Tugas Isian Singkat</span>
+          <span id="taskCountBadge" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">10 Soal</span>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable container) -->
+      <div class="overflow-y-auto pr-1 flex-1 space-y-4 custom-scrollbar text-xs">
+        
+        <!-- ================= TAB 1: LANGKAH-LANGKAH MISI ================= -->
+        <div id="missionTabContentSteps" class="space-y-3">
+          <!-- Mission banner -->
+          <div class="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 p-3 rounded-lg border border-red-200/70 dark:border-red-900/40 text-slate-700 dark:text-slate-200 flex items-start gap-2.5">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-[#E5232B] flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p id="missionIntroText" class="font-medium leading-relaxed">
+                Ikuti langkah-langkah misi laboratorium di bawah ini menggunakan panel simulasi di layar utama. Catat hasil pengamatanmu untuk menjawab <b>Lembar Tugas Isian Singkat</b> pada tab berikutnya!
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 1 Card -->
+          <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-red-300 dark:hover:border-red-800 transition-colors">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="w-5 h-5 rounded-full bg-red-100 dark:bg-red-950 text-[#E5232B] font-bold text-[11px] flex items-center justify-center flex-shrink-0">1</span>
+              <h4 id="missionCard1Title" class="font-bold text-slate-800 dark:text-slate-100 text-xs">Misi 1: Menyelidiki Titik Leleh (Lebur) Air</h4>
+            </div>
+            <p id="missionCard1Desc" class="text-slate-600 dark:text-slate-300 leading-relaxed pl-7">
+              Atur zat ke <b>Air (H₂O)</b> dan suhu awal ke <b>-10°C (Standar)</b>. Geser slider <b>Kalor Diberikan (Q)</b> perlahan ke kanan. Perhatikan pada suhu berapa grafik membentuk <b>garis mendatar</b> pertama (suhu tidak naik saat es melebur menjadi air cair).
+            </p>
+            <div class="mt-2 pl-7 flex items-center gap-2 text-[11px] text-[#E5232B] font-semibold">
+              <i data-lucide="target" class="w-3.5 h-3.5"></i>
+              <span id="missionCard1Goal">Target: Temukan suhu konstan saat peleburan es berlangsung (°C).</span>
+            </div>
+          </div>
+
+          <!-- Step 2 Card -->
+          <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-red-300 dark:hover:border-red-800 transition-colors">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="w-5 h-5 rounded-full bg-red-100 dark:bg-red-950 text-[#E5232B] font-bold text-[11px] flex items-center justify-center flex-shrink-0">2</span>
+              <h4 id="missionCard2Title" class="font-bold text-slate-800 dark:text-slate-100 text-xs">Misi 2: Menyelidiki Titik Didih Air</h4>
+            </div>
+            <p id="missionCard2Desc" class="text-slate-600 dark:text-slate-300 leading-relaxed pl-7">
+              Lanjutkan pemanasan kalor hingga air mencapai <b>garis mendatar kedua</b> pada grafik kalor di mana air cair bergejolak dan menguap menjadi gas (uap air). Amati suhu pada termometer digital.
+            </p>
+            <div class="mt-2 pl-7 flex items-center gap-2 text-[11px] text-[#E5232B] font-semibold">
+              <i data-lucide="target" class="w-3.5 h-3.5"></i>
+              <span id="missionCard2Goal">Target: Temukan suhu konstan saat air mendidih (°C).</span>
+            </div>
+          </div>
+
+          <!-- Step 3 Card -->
+          <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-red-300 dark:hover:border-red-800 transition-colors">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="w-5 h-5 rounded-full bg-red-100 dark:bg-red-950 text-[#E5232B] font-bold text-[11px] flex items-center justify-center flex-shrink-0">3</span>
+              <h4 id="missionCard3Title" class="font-bold text-slate-800 dark:text-slate-100 text-xs">Misi 3: Mengamati Perilaku Mikroskopis Partikel</h4>
+            </div>
+            <p id="missionCard3Desc" class="text-slate-600 dark:text-slate-300 leading-relaxed pl-7">
+              Amati panel <b>Partikel Mikroskopis</b> di samping wadah zat. Saat kalor terus diserap dari es dingin (-10°C) hingga menjadi uap (110°C), amati apakah getaran partikel semakin lambat atau cepat, dan apakah jarak antar partikel semakin rapat atau renggang/berjauhan.
+            </p>
+            <div class="mt-2 pl-7 flex items-center gap-2 text-[11px] text-[#E5232B] font-semibold">
+              <i data-lucide="target" class="w-3.5 h-3.5"></i>
+              <span id="missionCard3Goal">Target: Simpulkan perubahan kecepatan gerak &amp; jarak antar molekul.</span>
+            </div>
+          </div>
+
+          <!-- Step 4 Card -->
+          <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-red-300 dark:hover:border-red-800 transition-colors">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="w-5 h-5 rounded-full bg-red-100 dark:bg-red-950 text-[#E5232B] font-bold text-[11px] flex items-center justify-center flex-shrink-0">4</span>
+              <h4 id="missionCard4Title" class="font-bold text-slate-800 dark:text-slate-100 text-xs">Misi 4: Memahami 6 Istilah Perubahan Wujud Zat</h4>
+            </div>
+            <p id="missionCard4Desc" class="text-slate-600 dark:text-slate-300 leading-relaxed pl-7">
+              Klik tombol <b>Info Proses</b> atau amati diagram perubahan wujud. Pelajari 6 istilah proses: saat menyerap kalor (padat&rarr;cair, cair&rarr;gas, padat&rarr;gas) dan saat melepas kalor (cair&rarr;padat, gas&rarr;cair, gas&rarr;padat).
+            </p>
+            <div class="mt-2 pl-7 flex items-center gap-2 text-[11px] text-[#E5232B] font-semibold">
+              <i data-lucide="target" class="w-3.5 h-3.5"></i>
+              <span id="missionCard4Goal">Target: Kuasai 6 istilah (melebur, menguap, menyublim, membeku, mengembun, mengkristal).</span>
+            </div>
+          </div>
+
+          <!-- Quick Action to Worksheet -->
+          <div class="pt-2 flex justify-end">
+            <button onclick="switchMissionTab('worksheet')" class="btn-sidafi-primary px-4 py-2 text-xs flex items-center gap-1.5 shadow-sm">
+              <span id="btnGoToWorksheetText">Lanjut ke Lembar Tugas Isian</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= TAB 2: LEMBAR TUGAS ISIAN SINGKAT ================= -->
+        <div id="missionTabContentWorksheet" class="hidden space-y-4">
+          
+          <!-- Result & Feedback Banner -->
+          <div id="missionFeedbackBanner" class="hidden p-3 rounded-lg border transition-all duration-300 text-xs"></div>
+
+          <!-- Section 1: Titik Leleh & Titik Didih -->
+          <div class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 space-y-2.5">
+            <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs border-b border-slate-200 dark:border-slate-800 pb-1.5">
+              <i data-lucide="thermometer" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+              <span id="titleSec1">Bagian 1: Titik Leleh &amp; Titik Didih Air</span>
+            </div>
+            <div class="text-slate-700 dark:text-slate-200 leading-relaxed">
+              <span id="lblQ1_1">Titik leleh air adalah</span>
+              <input type="text" id="taskInput1" placeholder="..." class="mission-input w-16 text-center font-bold font-mono px-2 py-1 mx-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+              <span id="lblQ1_2">°C, sedangkan titik didih air adalah</span>
+              <input type="text" id="taskInput2" placeholder="..." class="mission-input w-16 text-center font-bold font-mono px-2 py-1 mx-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+              <span id="lblQ1_3">°C.</span>
+            </div>
+            <div id="keyBoxQ1" class="hidden text-[11px] text-slate-500 dark:text-slate-400 pl-1 font-mono">
+              💡 Kunci: Titik leleh = <span class="font-bold text-[#E5232B]">0</span> °C, Titik didih = <span class="font-bold text-[#E5232B]">100</span> °C
+            </div>
+          </div>
+
+          <!-- Section 2: Perilaku Partikel Mikroskopis -->
+          <div class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 space-y-2.5">
+            <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs border-b border-slate-200 dark:border-slate-800 pb-1.5">
+              <i data-lucide="atom" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+              <span id="titleSec2">Bagian 2: Perilaku Partikel Saat Kalor Diserap</span>
+            </div>
+            <div class="text-slate-700 dark:text-slate-200 leading-relaxed">
+              <span id="lblQ2_1">Jika suatu zat menyerap kalor, maka partikel-partikel penyusun zat tersebut akan bergerak semakin</span>
+              <input type="text" id="taskInput3" placeholder="..." class="mission-input w-28 sm:w-32 text-center font-bold px-2 py-1 mx-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+              <span id="lblQ2_2">dan jarak antar partikelnya menjadi semakin</span>
+              <input type="text" id="taskInput4" placeholder="..." class="mission-input w-28 sm:w-32 text-center font-bold px-2 py-1 mx-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+              <span id="lblQ2_3">.</span>
+            </div>
+            <div id="keyBoxQ2" class="hidden text-[11px] text-slate-500 dark:text-slate-400 pl-1 font-mono">
+              💡 Kunci: Bergerak semakin <span class="font-bold text-[#E5232B]">cepat / lincah</span>, jarak antar partikel semakin <span class="font-bold text-[#E5232B]">renggang / jauh</span>.
+            </div>
+          </div>
+
+          <!-- Section 3: Istilah 6 Proses Perubahan Wujud Zat -->
+          <div class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 space-y-2.5">
+            <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs border-b border-slate-200 dark:border-slate-800 pb-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+              <span id="titleSec3">Bagian 3: Istilah Proses Perubahan Wujud Zat</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              
+              <!-- Q5: Padat -> Cair -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_1" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>padat &rarr; cair</b>:</span>
+                </div>
+                <input type="text" id="taskInput5" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ5" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">melebur / mencair (melting)</span>
+                </div>
+              </div>
+
+              <!-- Q6: Cair -> Gas -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_2" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>cair &rarr; gas</b>:</span>
+                </div>
+                <input type="text" id="taskInput6" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ6" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">menguap / mendidih (evaporation)</span>
+                </div>
+              </div>
+
+              <!-- Q7: Padat -> Gas -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_3" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>padat &rarr; gas</b>:</span>
+                </div>
+                <input type="text" id="taskInput7" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ7" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">menyublim / sublimasi (sublimation)</span>
+                </div>
+              </div>
+
+              <!-- Q8: Cair -> Padat -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_4" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>cair &rarr; padat</b>:</span>
+                </div>
+                <input type="text" id="taskInput8" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ8" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">membeku (freezing)</span>
+                </div>
+              </div>
+
+              <!-- Q9: Gas -> Cair -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_5" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>gas &rarr; cair</b>:</span>
+                </div>
+                <input type="text" id="taskInput9" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ9" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">mengembun / kondensasi (condensation)</span>
+                </div>
+              </div>
+
+              <!-- Q10: Gas -> Padat -->
+              <div class="p-2.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span id="lblQ3_6" class="text-slate-700 dark:text-slate-300">Perubahan dari <b>gas &rarr; padat</b>:</span>
+                </div>
+                <input type="text" id="taskInput10" placeholder="..." class="mission-input w-full font-bold px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-red-500">
+                <div id="keyBoxQ10" class="hidden text-[10.5px] text-slate-500 dark:text-slate-400 font-mono">
+                  💡 Kunci: <span class="font-bold text-[#E5232B]">mengkristal / deposisi (deposition)</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Modal Footer (Actions) -->
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <button id="btnResetMission" onclick="resetMissionAnswers()" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-[#E5232B] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span id="txtResetMission">Reset</span>
+          </button>
+          <button id="btnShowKeys" onclick="toggleMissionKeys()" class="px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors flex items-center gap-1">
+            <i data-lucide="key" class="w-3.5 h-3.5"></i>
+            <span id="txtShowMissionKeys">Kunci Jawaban</span>
+          </button>
+          <button id="btnCopyMission" onclick="copyMissionSummary()" class="px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors flex items-center gap-1" title="Salin Ringkasan Hasil">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="txtCopyMission">Salin Hasil</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnCheckMission" onclick="checkMissionAnswers()" class="btn-sidafi-primary px-4 py-1.5 text-xs flex items-center gap-1.5 font-bold shadow-sm">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+            <span id="txtCheckMission">Periksa Jawaban</span>
+          </button>
+          <button onclick="closeModal('modalMisi')" class="btn-sidafi-secondary px-3 py-1.5 text-xs">
+            <span class="modal-close-text">Tutup</span>
+          </button>
+        </div>
       </div>
 
     </div>
