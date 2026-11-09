@@ -143,6 +143,9 @@ html, body {
   letter-spacing: 0.06em;
   color: var(--gray);
 }
+.stat-label span {
+  text-transform: none;
+}
 .dark .stat-label {
   color: #94a3b8;
 }

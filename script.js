@@ -31,6 +31,566 @@ const state = {
   bubbles: []            // Gelembung saat air mendidih
 };
 
+// --- SISTEM DUA BAHASA (BILINGUAL I18N: ID & EN) ---
+let currentLang = localStorage.getItem('simulasi_kalor_lang') || 'id';
+
+const i18n = {
+  id: {
+    appTitle: 'Kalor<span class="text-[#E5232B]">&amp;</span>Wujud Zat',
+    levelBadge: 'IPA SMP',
+    appSubtitle: 'Laboratorium Fisika Interaktif Titik Lebur, Mendidih &amp; Anomali Air',
+    navEnvInfo: 'Informasi Lingkungan',
+    titleEnvInfo: 'Informasi Lingkungan',
+    navTheory: 'Materi',
+    titleTheory: 'Rangkuman Materi Fisika',
+    navQuiz: 'Kuis',
+    titleQuiz: 'Kuis Konsep',
+    langToggleTitle: 'Switch to English / Ganti Bahasa ke Inggris',
+    langBtnLabel: 'EN',
+    themeDark: 'Gelap',
+    themeLight: 'Terang',
+    navReset: 'Reset',
+    titleReset: 'Reset Semua Parameter',
+    labelEnvironment: 'Lingkungan:',
+    zoneFreezer: 'Freezer',
+    zoneSuhuRuang: 'Suhu Ruang',
+    zoneKompor: 'Kompor',
+    labelFlame: 'Intensitas Api:',
+    flameLow: 'Kecil',
+    flameMed: 'Sedang',
+    flameHigh: 'Besar',
+    labelParticles: 'Partikel H<sub>2</sub>O:',
+    btnStart: 'Mulai',
+    btnResume: 'Lanjut',
+    btnPause: 'Jeda',
+    labelInitialTemp: 'Suhu Awal:',
+    initialTempOptions: [
+      { group: 'Padat (Es)', options: [
+        { val: '-20', text: '-20°C' },
+        { val: '-15', text: '-15°C' },
+        { val: '-10', text: '-10°C (Standar)' },
+        { val: '-5', text: '-5°C' },
+        { val: '0', text: '0°C (Titik Lebur)' }
+      ]},
+      { group: 'Cair (Air)', options: [
+        { val: '10', text: '10°C (Air Dingin)' },
+        { val: '20', text: '20°C (Air Sejuk)' },
+        { val: '27', text: '27°C (Suhu Ruang)' },
+        { val: '50', text: '50°C (Air Hangat)' },
+        { val: '75', text: '75°C (Air Panas)' },
+        { val: '100', text: '100°C (Titik Didih)' }
+      ]},
+      { group: 'Gas (Uap)', options: [
+        { val: '105', text: '105°C (Uap Awal)' },
+        { val: '110', text: '110°C (Uap Panas)' },
+        { val: '120', text: '120°C (Uap Maksimal)' }
+      ]},
+      { val: 'custom', text: 'Kustom (°C)...' }
+    ],
+    labelMass: 'Massa:',
+    labelSpeed: 'Laju:',
+    statLabelTemp: 'Suhu Zat (<span class="italic font-serif font-bold">T</span>)',
+    statLabelHeat: 'Kalor (<span class="italic font-serif font-bold">Q</span>)',
+    statLabelTime: 'Waktu Proses (<span class="italic font-serif font-bold">t</span>)',
+    graphTitle: 'Grafik Kalor &ndash; Suhu (<span class="italic font-serif font-bold">Q &ndash; T</span>)',
+    viewFocused: 'Fokus Titik',
+    viewOverview: 'Peta Penuh',
+    viewToggleTitle: 'Beralih mode fokus titik live atau tampilan kurva penuh',
+    processInfoBtn: 'Info Proses',
+    processInfoBtnTitle: 'Buka / tutup status proses kalor',
+    btnFormulaText: 'Rumus',
+    btnFormulaTitle: 'Tabel Rumus &amp; Konstanta Fisika',
+    processInfoTitle: 'Status Proses Kalor',
+    legendCurrentPoint: 'Titik Saat Ini',
+    scoreLabel: 'Skor:',
+    btnResetQuiz: 'Ulangi Kuis',
+    btnFinishQuiz: 'Selesai',
+    btnClose: 'Tutup',
+    modalKalorLatenTitle: 'Rumus Kalor &amp; Kalor Laten',
+    modalPanduanTitle: 'Informasi Lingkungan',
+    modalMateriTitle: 'Materi Kalor &amp; Hukum Fisika',
+    modalKuisTitle: 'Kuis Pemahaman Kalor',
+    modalKuisSubtitle: '5 Pertanyaan Konsep IPA SMP',
+    modalKalorLaten: `
+      <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="p-2">Jenis Kalor</th>
+              <th class="p-2">Persamaan</th>
+              <th class="p-2">Efek pada Zat</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Sensibel</td>
+              <td class="p-2 font-mono font-bold text-[#E5232B]">Q = m · c · ΔT</td>
+              <td class="p-2">Suhu zat naik / turun, wujud zat tetap.</td>
+            </tr>
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Laten Lebur / Beku</td>
+              <td class="p-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m · L</td>
+              <td class="p-2">Padat &harr; Cair (0°C). Melebur (serap kalor) atau Membeku (lepas kalor).</td>
+            </tr>
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Laten Uap / Embun</td>
+              <td class="p-2 font-mono font-bold text-amber-600 dark:text-amber-400">Q = m · U</td>
+              <td class="p-2">Cair &harr; Gas (100°C). Menguap (serap kalor) atau Mengembun (lepas kalor).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1">
+        <span class="font-display font-bold font-sans text-xs text-slate-900 dark:text-white block mb-1">Konstanta Fisika (Tekanan 1 atm):</span>
+        <div class="flex justify-between"><span>Kalor jenis es (c<sub>es</sub>):</span><span class="font-bold">2.100 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Kalor jenis air (c<sub>air</sub>):</span><span class="font-bold">4.200 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Kalor jenis uap (c<sub>uap</sub>):</span><span class="font-bold">2.000 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Kalor lebur es (L):</span><span class="font-bold">336.000 J/kg</span></div>
+        <div class="flex justify-between"><span>Kalor uap air (U):</span><span class="font-bold">2.260.000 J/kg</span></div>
+      </div>
+    `,
+    modalPanduan: `
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">1</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Freezer</strong>
+          Kondisi Lingkungan dengan Suhu -10°C. Pada suhu ini, Air (H<sub>2</sub>O) berada pada wujud padat atau sering disebut "Es".
+        </div>
+      </div>
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">2</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Suhu Ruang</strong>
+          Kondisi Lingkungan dengan Suhu 27°C. Pada suhu ini, Air (H<sub>2</sub>O) berada pada wujud cair. Kalor dari udara ruangan diserap secara alami oleh es sehingga es melebur menjadi air pada titik lebur 0°C.
+        </div>
+      </div>
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-[#E5232B] text-white font-bold flex items-center justify-center shrink-0 text-[10px]">3</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Kompor</strong>
+          Kondisi Lingkungan dengan Suhu 150°C. Pada kondisi ini, nyala api memberikan energi kalor tinggi sehingga air dipanaskan mencapai titik didih 100°C dan berubah wujud menjadi gas atau sering disebut "Uap Air".
+        </div>
+      </div>
+    `,
+    modalMateri: `
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">1. Hubungan Kalor dan Suhu Zat</h4>
+        <p class="leading-relaxed">
+          • <strong>Perubahan Suhu (Sensibel)</strong>: Kalor yang diserap menaikkan suhu zat, sedangkan kalor yang dilepas menurunkan suhu zat (<span class="font-mono font-bold text-[#E5232B]">Q = m·c·ΔT</span>).<br>
+          • <strong>Perubahan Wujud (Laten)</strong>: Pada titik lebur/beku (0°C) atau titik didih/embun (100°C), suhu zat <strong>tidak berubah (konstan)</strong>. Kalor diserap saat <i>melebur</i> &amp; <i>menguap</i>, serta kalor dilepas saat <i>mengembun</i> &amp; <i>membeku</i> (<span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m·L</span> atau <span class="font-mono font-bold text-amber-600 dark:text-amber-400">Q = m·U</span>).
+        </p>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">2. Hukum Kekekalan Massa &amp; Anomali Air</h4>
+        <p class="leading-relaxed">
+          • <strong>Hukum Kekekalan Massa</strong>: Ketika es melebur menjadi air atau air membeku kembali menjadi es, <strong>massa zat selalu tetap kekal</strong> (<span class="font-mono font-bold">m<sub>es</sub> = m<sub>air</sub></span>).<br>
+          • <strong>Anomali Pemuaian Air</strong>: Es memiliki struktur heksagonal berongga dengan massa jenis lebih kecil (&rho;<sub>es</sub> &asymp; 0,92 g/cm³). Saat melebur menjadi air (&rho;<sub>air</sub> &asymp; 1,0 g/cm³), volumenya menyusut &asymp; 8,3%. Sebaliknya saat air membeku menjadi es, volumenya <strong>memuai &asymp; 9%</strong>. Sifat anomali ini membuat es selalu terapung di atas air.
+        </p>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">3. Arah Aliran Kalor (Hukum Termodinamika)</h4>
+        <p class="leading-relaxed">
+          Kalor mengalir secara spontan dari benda/lingkungan bersuhu lebih tinggi menuju benda bersuhu lebih rendah hingga tercapai kesetimbangan termal.
+        </p>
+      </div>
+    `
+  },
+  en: {
+    appTitle: 'Heat<span class="text-[#E5232B]">&amp;</span>Phase Change',
+    levelBadge: 'Junior Physics',
+    appSubtitle: 'Interactive Physics Lab for Melting, Boiling &amp; Water Anomaly',
+    navEnvInfo: 'Environment Info',
+    titleEnvInfo: 'Environment Information',
+    navTheory: 'Theory',
+    titleTheory: 'Physics Summary &amp; Theory',
+    navQuiz: 'Quiz',
+    titleQuiz: 'Concept Quiz',
+    langToggleTitle: 'Ganti ke Bahasa Indonesia / Switch to Indonesian',
+    langBtnLabel: 'ID',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    navReset: 'Reset',
+    titleReset: 'Reset All Parameters',
+    labelEnvironment: 'Environment:',
+    zoneFreezer: 'Freezer',
+    zoneSuhuRuang: 'Room Temp',
+    zoneKompor: 'Stove Burner',
+    labelFlame: 'Flame Intensity:',
+    flameLow: 'Low',
+    flameMed: 'Med',
+    flameHigh: 'High',
+    labelParticles: 'H<sub>2</sub>O Particles:',
+    btnStart: 'Start',
+    btnResume: 'Resume',
+    btnPause: 'Pause',
+    labelInitialTemp: 'Initial Temp:',
+    initialTempOptions: [
+      { group: 'Solid (Ice)', options: [
+        { val: '-20', text: '-20°C' },
+        { val: '-15', text: '-15°C' },
+        { val: '-10', text: '-10°C (Standard)' },
+        { val: '-5', text: '-5°C' },
+        { val: '0', text: '0°C (Melting Point)' }
+      ]},
+      { group: 'Liquid (Water)', options: [
+        { val: '10', text: '10°C (Cold Water)' },
+        { val: '20', text: '20°C (Cool Water)' },
+        { val: '27', text: '27°C (Room Temp)' },
+        { val: '50', text: '50°C (Warm Water)' },
+        { val: '75', text: '75°C (Hot Water)' },
+        { val: '100', text: '100°C (Boiling Point)' }
+      ]},
+      { group: 'Gas (Steam)', options: [
+        { val: '105', text: '105°C (Early Steam)' },
+        { val: '110', text: '110°C (Hot Steam)' },
+        { val: '120', text: '120°C (Max Steam)' }
+      ]},
+      { val: 'custom', text: 'Custom (°C)...' }
+    ],
+    labelMass: 'Mass:',
+    labelSpeed: 'Speed:',
+    statLabelTemp: 'Temperature (<span class="italic font-serif font-bold">T</span>)',
+    statLabelHeat: 'Heat (<span class="italic font-serif font-bold">Q</span>)',
+    statLabelTime: 'Elapsed Time (<span class="italic font-serif font-bold">t</span>)',
+    graphTitle: 'Heat &ndash; Temperature Graph (<span class="italic font-serif font-bold">Q &ndash; T</span>)',
+    viewFocused: 'Point Focus',
+    viewOverview: 'Full Overview',
+    viewToggleTitle: 'Toggle live point focus or full curve overview',
+    processInfoBtn: 'Process Info',
+    processInfoBtnTitle: 'Toggle heat process details',
+    btnFormulaText: 'Formulas',
+    btnFormulaTitle: 'Formula Table &amp; Physical Constants',
+    processInfoTitle: 'Heat Process Status',
+    legendCurrentPoint: 'Current Point',
+    scoreLabel: 'Score:',
+    btnResetQuiz: 'Restart Quiz',
+    btnFinishQuiz: 'Finish',
+    btnClose: 'Close',
+    modalKalorLatenTitle: 'Heat Formulas &amp; Latent Heat',
+    modalPanduanTitle: 'Environment Information',
+    modalMateriTitle: 'Heat Concepts &amp; Physical Laws',
+    modalKuisTitle: 'Heat Concept Quiz',
+    modalKuisSubtitle: '5 Junior Physics Questions',
+    modalKalorLaten: `
+      <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="p-2">Heat Type</th>
+              <th class="p-2">Equation</th>
+              <th class="p-2">Effect on Substance</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Sensible Heat</td>
+              <td class="p-2 font-mono font-bold text-[#E5232B]">Q = m · c · ΔT</td>
+              <td class="p-2">Temperature increases / decreases, state of matter unchanged.</td>
+            </tr>
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Latent Heat of Fusion / Freezing</td>
+              <td class="p-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m · L</td>
+              <td class="p-2">Solid &harr; Liquid (0°C). Melting (absorbs heat) or Freezing (releases heat).</td>
+            </tr>
+            <tr>
+              <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Latent Heat of Vaporization / Condensation</td>
+              <td class="p-2 font-mono font-bold text-amber-600 dark:text-amber-400">Q = m · U</td>
+              <td class="p-2">Liquid &harr; Gas (100°C). Vaporizing (absorbs heat) or Condensing (releases heat).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1">
+        <span class="font-display font-bold font-sans text-xs text-slate-900 dark:text-white block mb-1">Physical Constants (1 atm Pressure):</span>
+        <div class="flex justify-between"><span>Specific heat of ice (c<sub>ice</sub>):</span><span class="font-bold">2,100 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Specific heat of water (c<sub>water</sub>):</span><span class="font-bold">4,200 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Specific heat of steam (c<sub>steam</sub>):</span><span class="font-bold">2,000 J/(kg·°C)</span></div>
+        <div class="flex justify-between"><span>Latent heat of fusion (L):</span><span class="font-bold">336,000 J/kg</span></div>
+        <div class="flex justify-between"><span>Latent heat of vaporization (U):</span><span class="font-bold">2,260,000 J/kg</span></div>
+      </div>
+    `,
+    modalPanduan: `
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">1</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Freezer</strong>
+          Environmental condition at -10°C. At this temperature, water (H<sub>2</sub>O) exists in a solid state commonly known as "Ice".
+        </div>
+      </div>
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">2</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Room Temperature</strong>
+          Environmental condition at 27°C. At this temperature, water (H<sub>2</sub>O) exists in a liquid state. Heat from room air is naturally absorbed by ice, causing it to melt into water at the 0°C melting point.
+        </div>
+      </div>
+      <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+        <span class="w-5 h-5 rounded-full bg-[#E5232B] text-white font-bold flex items-center justify-center shrink-0 text-[10px]">3</span>
+        <div>
+          <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Stove Burner</strong>
+          Environmental condition at 150°C. Under this condition, the burner supplies high thermal energy, heating water to its 100°C boiling point and transitioning it into a gas known as "Water Vapor / Steam".
+        </div>
+      </div>
+    `,
+    modalMateri: `
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">1. Heat and Temperature Relationship</h4>
+        <p class="leading-relaxed">
+          • <strong>Temperature Change (Sensible Heat)</strong>: Absorbing heat raises temperature, while releasing heat lowers temperature (<span class="font-mono font-bold text-[#E5232B]">Q = m·c·ΔT</span>).<br>
+          • <strong>Phase Change (Latent Heat)</strong>: At melting/freezing (0°C) or boiling/condensation (100°C), substance temperature remains <strong>constant</strong>. Heat is absorbed during <i>melting</i> &amp; <i>vaporization</i>, and released during <i>condensation</i> &amp; <i>freezing</i> (<span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m·L</span> or <span class="font-mono font-bold text-amber-600 dark:text-amber-400">Q = m·U</span>).
+        </p>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">2. Conservation of Mass &amp; Water Anomaly</h4>
+        <p class="leading-relaxed">
+          • <strong>Law of Conservation of Mass</strong>: When ice melts into water or water refreezes into ice, <strong>total substance mass is strictly conserved</strong> (<span class="font-mono font-bold">m<sub>ice</sub> = m<sub>water</sub></span>).<br>
+          • <strong>Anomalous Expansion of Water</strong>: Ice has a hollow hexagonal crystal structure with lower density (&rho;<sub>ice</sub> &asymp; 0.92 g/cm³). When melting into liquid (&rho;<sub>water</sub> &asymp; 1.0 g/cm³), its volume contracts by &asymp; 8.3%. Conversely, when water freezes into ice, its volume <strong>expands by &asymp; 9%</strong>. This anomaly causes ice to float on liquid water.
+        </p>
+      </div>
+      <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+        <h4 class="font-bold text-xs text-slate-900 dark:text-white">3. Heat Flow Direction (Thermodynamics)</h4>
+        <p class="leading-relaxed">
+          Heat flows spontaneously from regions of higher temperature to regions of lower temperature until thermal equilibrium is established.
+        </p>
+      </div>
+    `
+  }
+};
+
+function renderModals() {
+  const lang = currentLang;
+  const t = i18n[lang] || i18n.id;
+
+  const bodyKalor = document.getElementById('modalKalorLatenBody');
+  if (bodyKalor) bodyKalor.innerHTML = t.modalKalorLaten;
+
+  const bodyPanduan = document.getElementById('modalPanduanBody');
+  if (bodyPanduan) bodyPanduan.innerHTML = t.modalPanduan;
+
+  const bodyMateri = document.getElementById('modalMateriBody');
+  if (bodyMateri) bodyMateri.innerHTML = t.modalMateri;
+}
+
+function applyLanguage() {
+  const lang = currentLang;
+  const t = i18n[lang] || i18n.id;
+  document.documentElement.lang = lang;
+
+  // Header
+  const appTitle = document.getElementById('appTitle');
+  if (appTitle) appTitle.innerHTML = t.appTitle;
+
+  const levelBadge = document.getElementById('levelBadge');
+  if (levelBadge) levelBadge.innerHTML = t.levelBadge;
+
+  const appSubtitle = document.getElementById('appSubtitle');
+  if (appSubtitle) appSubtitle.innerHTML = t.appSubtitle;
+
+  const navEnvInfo = document.getElementById('navEnvInfo');
+  if (navEnvInfo) navEnvInfo.textContent = t.navEnvInfo;
+  const btnEnvInfo = document.getElementById('btnEnvInfo');
+  if (btnEnvInfo) btnEnvInfo.title = t.titleEnvInfo;
+
+  const navTheory = document.getElementById('navTheory');
+  if (navTheory) navTheory.textContent = t.navTheory;
+  const btnTheory = document.getElementById('btnTheory');
+  if (btnTheory) btnTheory.title = t.titleTheory;
+
+  const navQuiz = document.getElementById('navQuiz');
+  if (navQuiz) navQuiz.textContent = t.navQuiz;
+  const btnQuiz = document.getElementById('btnQuiz');
+  if (btnQuiz) btnQuiz.title = t.titleQuiz;
+
+  const langLabel = document.getElementById('langLabel');
+  if (langLabel) langLabel.textContent = t.langBtnLabel;
+  const btnLangToggle = document.getElementById('btnLangToggle');
+  if (btnLangToggle) btnLangToggle.title = t.langToggleTitle;
+
+  const themeLabel = document.getElementById('themeLabel');
+  if (themeLabel) {
+    const isDark = document.documentElement.classList.contains('dark');
+    themeLabel.textContent = isDark ? t.themeLight : t.themeDark;
+  }
+
+  const navReset = document.getElementById('navReset');
+  if (navReset) navReset.textContent = t.navReset;
+  const btnReset = document.getElementById('btnReset');
+  if (btnReset) btnReset.title = t.titleReset;
+
+  // Left Column
+  const labelEnvironment = document.getElementById('labelEnvironment');
+  if (labelEnvironment) labelEnvironment.textContent = t.labelEnvironment;
+
+  const zoneTextFreezer = document.getElementById('zoneTextFreezer');
+  if (zoneTextFreezer) zoneTextFreezer.textContent = t.zoneFreezer;
+
+  const zoneTextSuhuRuang = document.getElementById('zoneTextSuhuRuang');
+  if (zoneTextSuhuRuang) zoneTextSuhuRuang.textContent = t.zoneSuhuRuang;
+
+  const zoneTextKompor = document.getElementById('zoneTextKompor');
+  if (zoneTextKompor) zoneTextKompor.textContent = t.zoneKompor;
+
+  const labelFlame = document.getElementById('labelFlame');
+  if (labelFlame) labelFlame.textContent = t.labelFlame;
+
+  const btnFlame1 = document.getElementById('btnFlame1');
+  if (btnFlame1) btnFlame1.textContent = t.flameLow;
+
+  const btnFlame2 = document.getElementById('btnFlame2');
+  if (btnFlame2) btnFlame2.textContent = t.flameMed;
+
+  const btnFlame3 = document.getElementById('btnFlame3');
+  if (btnFlame3) btnFlame3.textContent = t.flameHigh;
+
+  const labelParticles = document.getElementById('labelParticles');
+  if (labelParticles) labelParticles.innerHTML = t.labelParticles;
+
+  // Controls Toolbar
+  const playLabel = document.getElementById('playLabel');
+  if (playLabel) {
+    playLabel.textContent = state.isPlaying
+      ? t.btnPause
+      : (state.heatTotal > 0 ? t.btnResume : t.btnStart);
+  }
+
+  const labelInitialTemp = document.getElementById('labelInitialTemp');
+  if (labelInitialTemp) labelInitialTemp.textContent = t.labelInitialTemp;
+
+  const initialTempSelect = document.getElementById('initialTempSelect');
+  if (initialTempSelect) {
+    const currentVal = initialTempSelect.value;
+    initialTempSelect.innerHTML = '';
+    let foundMatch = false;
+    t.initialTempOptions.forEach(item => {
+      if (item.group) {
+        const og = document.createElement('optgroup');
+        og.label = item.group;
+        item.options.forEach(opt => {
+          const el = document.createElement('option');
+          el.value = opt.val;
+          el.textContent = opt.text;
+          if (opt.val === currentVal || parseFloat(opt.val) === state.initialTemp) {
+            el.selected = true;
+            foundMatch = true;
+          }
+          og.appendChild(el);
+        });
+        initialTempSelect.appendChild(og);
+      } else {
+        const el = document.createElement('option');
+        el.value = item.val;
+        el.textContent = item.text;
+        if (item.val === currentVal || item.val === 'custom') {
+          if (!foundMatch && item.val === 'custom') el.selected = true;
+          else if (item.val === currentVal) {
+            el.selected = true;
+            foundMatch = true;
+          }
+        }
+        initialTempSelect.appendChild(el);
+      }
+    });
+  }
+
+  const customTempInput = document.getElementById('customTempInput');
+  if (customTempInput) customTempInput.value = state.initialTemp;
+
+  const labelMass = document.getElementById('labelMass');
+  if (labelMass) labelMass.textContent = t.labelMass;
+
+  const labelSpeed = document.getElementById('labelSpeed');
+  if (labelSpeed) labelSpeed.textContent = t.labelSpeed;
+
+  // Right Column Telemetry & Graph
+  const statLabelTemp = document.getElementById('statLabelTemp');
+  if (statLabelTemp) statLabelTemp.innerHTML = t.statLabelTemp;
+
+  const statLabelHeat = document.getElementById('statLabelHeat');
+  if (statLabelHeat) statLabelHeat.innerHTML = t.statLabelHeat;
+
+  const statLabelTime = document.getElementById('statLabelTime');
+  if (statLabelTime) statLabelTime.innerHTML = t.statLabelTime;
+
+  const graphTitle = document.getElementById('graphTitle');
+  if (graphTitle) graphTitle.innerHTML = t.graphTitle;
+
+  const graphViewModeLabel = document.getElementById('graphViewModeLabel');
+  if (graphViewModeLabel) {
+    graphViewModeLabel.textContent = graphViewMode === 'focused' ? t.viewFocused : t.viewOverview;
+  }
+  const btnGraphViewToggle = document.getElementById('btnGraphViewToggle');
+  if (btnGraphViewToggle) btnGraphViewToggle.title = t.viewToggleTitle;
+
+  const processInfoBtnText = document.getElementById('processInfoBtnText');
+  if (processInfoBtnText) processInfoBtnText.textContent = t.processInfoBtn;
+  const btnProcessInfo = document.getElementById('btnProcessInfo');
+  if (btnProcessInfo) btnProcessInfo.title = t.processInfoBtnTitle;
+
+  const btnFormulaText = document.getElementById('btnFormulaText');
+  if (btnFormulaText) btnFormulaText.textContent = t.btnFormulaText;
+
+  const processInfoTitleText = document.getElementById('processInfoTitleText');
+  if (processInfoTitleText) processInfoTitleText.textContent = t.processInfoTitle;
+
+  const legendDotText = document.getElementById('legendDotText');
+  if (legendDotText) legendDotText.textContent = t.legendCurrentPoint;
+
+  // Modals Header & Buttons
+  const modalKalorLatenTitle = document.getElementById('modalKalorLatenTitle');
+  if (modalKalorLatenTitle) modalKalorLatenTitle.innerHTML = t.modalKalorLatenTitle;
+
+  const modalPanduanTitle = document.getElementById('modalPanduanTitle');
+  if (modalPanduanTitle) modalPanduanTitle.innerHTML = t.modalPanduanTitle;
+
+  const modalMateriTitle = document.getElementById('modalMateriTitle');
+  if (modalMateriTitle) modalMateriTitle.innerHTML = t.modalMateriTitle;
+
+  const modalKuisTitle = document.getElementById('modalKuisTitle');
+  if (modalKuisTitle) modalKuisTitle.innerHTML = t.modalKuisTitle;
+
+  const modalKuisSubtitle = document.getElementById('modalKuisSubtitle');
+  if (modalKuisSubtitle) modalKuisSubtitle.innerHTML = t.modalKuisSubtitle;
+
+  const scoreLabelPrefix = document.getElementById('scoreLabelPrefix');
+  if (scoreLabelPrefix) scoreLabelPrefix.textContent = t.scoreLabel;
+
+  const btnResetQuiz = document.getElementById('btnResetQuiz');
+  if (btnResetQuiz) btnResetQuiz.textContent = t.btnResetQuiz;
+
+  const btnFinishQuiz = document.getElementById('btnFinishQuiz');
+  if (btnFinishQuiz) btnFinishQuiz.textContent = t.btnFinishQuiz;
+
+  document.querySelectorAll('.modal-close-text').forEach(el => {
+    el.textContent = t.btnClose;
+  });
+
+  // Inject localized modal contents
+  renderModals();
+
+  // Re-render dynamic elements
+  renderQuiz();
+  updateUI();
+  renderMolecules();
+  renderGraph();
+
+  lucide.createIcons();
+}
+
+function setLanguage(lang) {
+  if (lang !== 'id' && lang !== 'en') return;
+  currentLang = lang;
+  localStorage.setItem('simulasi_kalor_lang', currentLang);
+  applyLanguage();
+}
+
+function toggleLanguage() {
+  sound.playClick();
+  currentLang = currentLang === 'id' ? 'en' : 'id';
+  localStorage.setItem('simulasi_kalor_lang', currentLang);
+  applyLanguage();
+}
+
+
 // --- WEB AUDIO SYNTHESIZER (SOUND FX TANPA FILE EKSTERNAL) ---
 class SoundFX {
   constructor() {
@@ -131,14 +691,14 @@ function applyTheme(isDark) {
     if (themeWrapper) {
       themeWrapper.innerHTML = '<i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>';
     }
-    if (themeLabel) themeLabel.textContent = 'Terang';
+    if (themeLabel) themeLabel.textContent = currentLang === 'en' ? 'Light' : 'Terang';
     localStorage.setItem('simulasi_kalor_theme', 'dark');
   } else {
     html.classList.remove('dark');
     if (themeWrapper) {
       themeWrapper.innerHTML = '<i data-lucide="moon" class="w-3.5 h-3.5 text-slate-700"></i>';
     }
-    if (themeLabel) themeLabel.textContent = 'Gelap';
+    if (themeLabel) themeLabel.textContent = currentLang === 'en' ? 'Dark' : 'Gelap';
     localStorage.setItem('simulasi_kalor_theme', 'light');
   }
 
@@ -154,13 +714,66 @@ function toggleTheme() {
 
 // --- PERHITUNGAN BATAS TITIK LANDMARK FISIKA (Q1 s/d Q5) ---
 function getLandmarks(mass, initT) {
-  const deltaT_es = Math.max(0, 0 - initT);
+  const tBase = Math.min(-10.0, typeof initT === 'number' ? initT : -10.0);
+  const deltaT_es = Math.max(0, 0 - tBase);
   const q1 = mass * C_ES * deltaT_es;
   const q2 = q1 + mass * L_LEBUR;
   const q3 = q2 + mass * C_AIR * 100;
   const q4 = q3 + mass * U_UAP;
   const q5 = q4 + mass * C_UAP * 20;
-  return { q1, q2, q3, q4, q5 };
+  return { q1, q2, q3, q4, q5, tBase };
+}
+
+// --- PERHITUNGAN STATUS TERMAL AWAL BERDASARKAN SUHU AWAL ---
+function getInitialThermalState(initT, mass) {
+  const landmarks = getLandmarks(mass, initT);
+  const m = mass;
+  const tBase = landmarks.tBase;
+
+  if (initT < 0) {
+    // Fase Padat (Es di bawah 0°C)
+    const q = m * C_ES * (initT - tBase);
+    return {
+      temp: initT,
+      heatTotal: q,
+      meltProgress: 0,
+      vaporProgress: 0
+    };
+  } else if (initT === 0) {
+    // Titik Lebur (Es pada 0°C siap melebur)
+    return {
+      temp: 0.0,
+      heatTotal: landmarks.q1,
+      meltProgress: 0,
+      vaporProgress: 0
+    };
+  } else if (initT > 0 && initT < 100) {
+    // Fase Cair (Air di antara 0°C s/d 100°C)
+    const q = landmarks.q2 + m * C_AIR * initT;
+    return {
+      temp: initT,
+      heatTotal: q,
+      meltProgress: 1.0,
+      vaporProgress: 0.0
+    };
+  } else if (initT === 100) {
+    // Titik Didih (Air mendidih 100°C siap menguap)
+    return {
+      temp: 100.0,
+      heatTotal: landmarks.q3,
+      meltProgress: 1.0,
+      vaporProgress: 0.0
+    };
+  } else {
+    // Fase Gas (Uap Panas di atas 100°C)
+    const q = landmarks.q4 + m * C_UAP * (initT - 100);
+    return {
+      temp: Math.min(120.0, initT),
+      heatTotal: Math.min(landmarks.q5, q),
+      meltProgress: 1.0,
+      vaporProgress: 1.0
+    };
+  }
 }
 
 // --- INISIALISASI MOLEKUL MIKROSKOPIS ---
@@ -217,7 +830,9 @@ function toggleGraphView() {
   const label = document.getElementById('graphViewModeLabel');
   const icon = document.getElementById('graphViewIcon');
   if (label) {
-    label.textContent = graphViewMode === 'focused' ? 'Fokus Titik' : 'Peta Penuh';
+    label.textContent = graphViewMode === 'focused'
+      ? (currentLang === 'en' ? 'Point Focus' : 'Fokus Titik')
+      : (currentLang === 'en' ? 'Full Overview' : 'Peta Penuh');
   }
   if (icon) {
     icon.setAttribute('data-lucide', graphViewMode === 'focused' ? 'crosshair' : 'maximize-2');
@@ -287,12 +902,25 @@ function toggleProcessInfo() {
   }
 }
 
+// --- PENGECEKAN STATUS ALIRAN KALOR (PEMANASAN ATAU PENDINGINAN) ---
+function isCoolingProcess() {
+  const hr = getHeatRate(state.temp, state.zone, state.flameLevel);
+  if (hr < -0.01) return true;
+  if (hr > 0.01) return false;
+  // Jika dalam kesetimbangan atau jeda saat suhu lebih tinggi dari lingkungan
+  if (state.zone === 'freezer' && (state.temp > -9.95 || state.heatTotal > 0.05)) return true;
+  if (state.zone === 'suhuRuang' && state.temp > 27.2) return true;
+  return false;
+}
+
 function getProcessInfoData() {
   const landmarks = getLandmarks(state.mass, state.initialTemp);
   const Q = state.heatTotal;
   const T = Math.abs(state.temp) < 0.05 ? 0.0 : state.temp;
   const zone = state.zone;
   const massG = Math.round(state.mass * 1000);
+  const isCooling = isCoolingProcess();
+  const lang = currentLang;
 
   let title = '';
   let badge = '';
@@ -300,153 +928,371 @@ function getProcessInfoData() {
   let text = '';
   let icon = 'info';
 
-  // 1. ZONA: FREEZER (-10°C)
-  if (zone === 'freezer') {
-    if (T <= -9.9 && Q <= 0.05) {
-      title = 'Keseimbangan Termal di Freezer';
-      badge = 'Suhu Stabil -10°C';
-      badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
-      icon = 'snowflake';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Padat (Es Batu).</div>
-        <div>• <strong>Aliran Kalor:</strong> Tidak ada aliran kalor (ΔT = 0).</div>
-        <div>• <strong>Konsep:</strong> Suhu es sama dengan suhu freezer (-10°C), sistem dalam kesetimbangan termal.</div>
-      `;
-    } else if (T > 0) {
-      title = 'Air Melepas Kalor ke Freezer';
-      badge = 'Pendinginan';
-      badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
-      icon = 'snowflake';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Cair &rarr; Membeku menjadi Padat.</div>
-        <div>• <strong>Rumus:</strong> Kalor sensibel (<i>Q = m·c<sub>air</sub>·ΔT</i>) lalu kalor laten pembekuan (<i>Q = m·L</i>).</div>
-        <div>• <strong>Konsep:</strong> Air melepas kalor ke lingkungan freezer yang lebih dingin hingga membeku sempurna pada 0°C.</div>
-      `;
-    } else {
-      title = 'Pendinginan Es di Freezer';
-      badge = 'Melepas Kalor';
-      badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
-      icon = 'snowflake';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Padat (Es).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>es</sub>·ΔT</i>.</div>
-        <div>• <strong>Konsep:</strong> Es melepas kalor sensibel hingga suhunya turun mencapai kesetimbangan di -10°C.</div>
-      `;
+  if (lang === 'en') {
+    // 1. ZONE: FREEZER (-10°C)
+    if (zone === 'freezer') {
+      if (T <= -9.9 && Q <= 0.05) {
+        title = 'Thermal Equilibrium in Freezer';
+        badge = 'Stable Temp -10°C';
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Phase:</strong> Solid (Ice).</div>
+          <div>• <strong>Heat Flow:</strong> None (ΔT = 0).</div>
+          <div>• <strong>Concept:</strong> Ice temperature equals freezer temperature (-10°C); system is in thermal equilibrium.</div>
+        `;
+      } else if (Q >= landmarks.q3) {
+        const pctCondense = Math.round((1 - state.vaporProgress) * 100);
+        title = 'Steam Condensing in Freezer (100°C)';
+        badge = `Condensing: ${pctCondense}%`;
+        badgeClass = 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Gas &rarr; Liquid (Condensation at 100°C).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Latent Heat of Condensation (<i>Q = m·U</i> = 2,260 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Steam releases a large quantity of latent heat into the freezer until it condenses back into liquid water at 100°C.</div>
+        `;
+      } else if (Q >= landmarks.q2 && Q < landmarks.q3) {
+        title = 'Water Releasing Heat into Freezer';
+        badge = `Water Cooling: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Phase:</strong> Liquid (Cooling down toward 0°C freezing point).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Sensible Heat (<i>Q = m·c<sub>water</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Water loses heat to the -10°C freezer environment; molecular kinetic energy decreases and temperature drops toward 0°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const pctFreeze = Math.round((1 - state.meltProgress) * 100);
+        title = 'Freezing Process in Freezer (0°C)';
+        badge = `Freezing: ${pctFreeze}%`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Liquid &rarr; Solid (Freezing Point 0°C).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Latent Heat of Freezing (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Temperature stays constant at 0°C during freezing. Water loses latent heat until all liquid crystallizes into ice. Volume expands by ~9% due to water anomaly.</div>
+        `;
+      } else {
+        title = 'Ice Subcooling in Freezer';
+        badge = `Ice Cooling: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Phase:</strong> Solid (Ice cooling down).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Sensible Heat (<i>Q = m·c<sub>ice</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Fully frozen ice continues to release sensible heat until reaching thermal equilibrium at -10°C.</div>
+        `;
+      }
     }
-  }
 
-  // 2. ZONA: SUHU RUANG (27°C)
-  else if (zone === 'suhuRuang') {
-    if (Q < landmarks.q1 && T < 0) {
-      title = 'Es Menyerap Kalor Udara Ruang';
-      badge = 'Kalor Sensibel';
-      badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
-      icon = 'thermometer-sun';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Padat (Es memanas).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>es</sub>·ΔT</i> (Kalor Sensibel).</div>
-        <div>• <strong>Konsep:</strong> Es menyerap kalor dari udara 27°C sehingga suhu es naik menuju titik lebur 0°C.</div>
-      `;
-    } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
-      const persen = Math.round(state.meltProgress * 100);
-      title = 'Melebur di Suhu Ruang (0°C)';
-      badge = `Proses Lebur: ${persen}%`;
-      badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
-      icon = 'droplets';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Transisi Padat &rarr; Cair (Titik Lebur 0°C).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·L</i> (Kalor Laten Lebur = 336 kJ/kg).</div>
-        <div>• <strong>Konsep:</strong> Suhu tetap 0°C selama melebur. Massa zat tetap ${massG} g (kekal), volume menyusut ~8,3% akibat anomali air.</div>
-      `;
-    } else if (Q >= landmarks.q2 && T < 26.5) {
-      title = 'Air Menyerap Kalor Menuju Suhu Ruang';
-      badge = 'Kalor Sensibel';
-      badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
-      icon = 'droplet';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Cair (Air memanas perlahan).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>air</sub>·ΔT</i>.</div>
-        <div>• <strong>Konsep:</strong> Air menyerap kalor alami dari udara ruangan hingga suhunya mendekati 27°C.</div>
-      `;
-    } else if (T >= 26.5 && T <= 28) {
-      title = 'Kesetimbangan Termal di Ruangan';
-      badge = 'Suhu Stabil 27°C';
-      badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
-      icon = 'check-circle';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Cair (Air stabil).</div>
-        <div>• <strong>Aliran Kalor:</strong> Nol (suhu air = suhu ruang 27°C).</div>
-        <div>• <strong>Konsep:</strong> Tanpa sumber pemanas tambahan (kompor), air tidak akan mendidih (100°C).</div>
-      `;
-    } else {
-      title = 'Air Panas Melepas Kalor ke Ruangan';
-      badge = 'Pendinginan Alami';
-      badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
-      icon = 'wind';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Cair (Air mendingin).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>air</sub>·ΔT</i>.</div>
-        <div>• <strong>Konsep:</strong> Kalor mengalir spontan dari air panas ke udara sekitar sampai suhunya kembali ke 27°C.</div>
-      `;
+    // 2. ZONE: ROOM TEMP (27°C)
+    else if (zone === 'suhuRuang') {
+      if (Q >= landmarks.q3) {
+        const pctCondense = Math.round((1 - state.vaporProgress) * 100);
+        title = 'Steam Condensing at Room Temp (100°C)';
+        badge = `Condensing: ${pctCondense}%`;
+        badgeClass = 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Gas &rarr; Liquid (Condensation at 100°C).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Latent Heat of Condensation (<i>Q = m·U</i> = 2,260 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Steam transfers latent heat into room air, condensing back into liquid water droplets at a constant 100°C.</div>
+        `;
+      } else if (T > 27.5) {
+        title = 'Hot Water Cooling to Room Temp';
+        badge = `Water Cooling: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'wind';
+        text = `
+          <div>• <strong>Phase:</strong> Liquid (Natural cooling).</div>
+          <div>• <strong>Heat Flow:</strong> Releases Sensible Heat (<i>Q = m·c<sub>water</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Heat flows spontaneously from hot water into surrounding 27°C air until equilibrium is reached.</div>
+        `;
+      } else if (T >= 26.5 && T <= 27.5) {
+        title = 'Thermal Equilibrium at Room Temp';
+        badge = 'Stable Temp 27°C';
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'check-circle';
+        text = `
+          <div>• <strong>Phase:</strong> Liquid (Water stable at 27°C).</div>
+          <div>• <strong>Heat Flow:</strong> Zero (water temp = room temp 27°C).</div>
+          <div>• <strong>Concept:</strong> Water temperature is in equilibrium with the room; no net heat transfer occurs.</div>
+        `;
+      } else if (Q >= landmarks.q2 && T < 26.5) {
+        title = 'Water Warming Toward Room Temp';
+        badge = `Water Warming: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'droplet';
+        text = `
+          <div>• <strong>Phase:</strong> Liquid (Warming gradually).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Sensible Heat (<i>Q = m·c<sub>water</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Water absorbs ambient heat from room air until approaching 27°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const pctMelt = Math.round(state.meltProgress * 100);
+        title = 'Melting at Room Temp (0°C)';
+        badge = `Melting: ${pctMelt}%`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Solid &rarr; Liquid (Melting Point 0°C).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Latent Heat of Fusion (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Temperature stays at 0°C during melting. Mass (${massG} g) is strictly conserved; volume contracts ~8.3% due to water anomaly.</div>
+        `;
+      } else {
+        title = 'Ice Absorbing Room Heat';
+        badge = `Ice Warming: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'thermometer-sun';
+        text = `
+          <div>• <strong>Phase:</strong> Solid (Ice warming up).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Sensible Heat (<i>Q = m·c<sub>ice</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Ice absorbs heat from 27°C ambient air, raising its temperature toward the 0°C melting point.</div>
+        `;
+      }
     }
-  }
 
-  // 3. ZONA: KOMPOR (150°C)
-  else if (zone === 'kompor') {
-    const flameTxt = state.flameLevel === 1 ? 'Kecil' : (state.flameLevel === 2 ? 'Sedang' : 'Besar');
+    // 3. ZONE: STOVE BURNER (150°C)
+    else if (zone === 'kompor') {
+      const flameTxt = state.flameLevel === 1 ? 'Low' : (state.flameLevel === 2 ? 'Med' : 'High');
 
-    if (Q < landmarks.q1 && T < 0) {
-      title = 'Es Dipanaskan Kompor: Suhu Cepat Naik';
-      badge = `Api ${flameTxt}`;
-      badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
-      icon = 'flame';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Padat (Es memanas cepat).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>es</sub>·ΔT</i> (Kalor Sensibel).</div>
-        <div>• <strong>Konsep:</strong> Kalor dari nyala kompor menaikkan energi kinetik molekul es menuju 0°C.</div>
-      `;
-    } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
-      const persen = Math.round(state.meltProgress * 100);
-      title = 'Proses Melebur di Kompor (0°C)';
-      badge = `Melebur: ${persen}%`;
-      badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
-      icon = 'layers';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Transisi Padat &rarr; Cair (Titik Lebur 0°C).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·L</i> (Kalor Laten Lebur = 336 kJ/kg).</div>
-        <div>• <strong>Konsep:</strong> Suhu tertahan di 0°C selama melebur. Massa ${massG} g tetap kekal, volume sedikit menyusut.</div>
-      `;
-    } else if (Q >= landmarks.q2 && Q < landmarks.q3 && T < 100) {
-      title = 'Pemanasan Air Menuju Titik Didih';
-      badge = `Suhu: ${T.toFixed(1)}°C`;
-      badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
-      icon = 'flame';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Cair (Air dipanaskan).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>air</sub>·ΔT</i> (Kalor Sensibel).</div>
-        <div>• <strong>Konsep:</strong> Kalor menaikkan suhu air dari 0°C ke titik didih 100°C. Gelembung konveksi mulai terbentuk.</div>
-      `;
-    } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
-      const persen = Math.round(state.vaporProgress * 100);
-      title = 'Mendidih & Menguap (100°C)';
-      badge = `Menguap: ${persen}%`;
-      badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
-      icon = 'cloud-fog';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Transisi Cair &rarr; Gas (Titik Didih 100°C).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·U</i> (Kalor Laten Penguapan = 2.260 kJ/kg).</div>
-        <div>• <strong>Konsep:</strong> Suhu konstan 100°C. Kalor digunakan memutus ikatan antarmolekul menjadi uap air.</div>
-      `;
-    } else {
-      title = 'Semua Air Menguap (Fase Gas)';
-      badge = 'Gas Bebas';
-      badgeClass = 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800';
-      icon = 'cloud';
-      text = `
-        <div>• <strong>Fase Zat:</strong> Gas (Uap Air Bebas).</div>
-        <div>• <strong>Rumus:</strong> <i>Q = m·c<sub>uap</sub>·ΔT</i>.</div>
-        <div>• <strong>Konsep:</strong> Seluruh air telah menguap membubung ke udara. Wadah kini kering.</div>
-      `;
+      if (Q < landmarks.q1 && T < 0) {
+        title = 'Ice Heated on Stove: Rapid Temperature Rise';
+        badge = `${flameTxt} Flame`;
+        badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
+        icon = 'flame';
+        text = `
+          <div>• <strong>Phase:</strong> Solid (Ice warming rapidly).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Sensible Heat (<i>Q = m·c<sub>ice</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Flame energy rapidly increases molecular kinetic energy of ice toward 0°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const pctMelt = Math.round(state.meltProgress * 100);
+        title = 'Melting Process on Stove (0°C)';
+        badge = `Melting: ${pctMelt}%`;
+        badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
+        icon = 'layers';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Solid &rarr; Liquid (Melting Point 0°C).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Latent Heat of Fusion (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Temperature remains locked at 0°C while melting. Mass (${massG} g) is conserved, volume slightly contracts.</div>
+        `;
+      } else if (Q >= landmarks.q2 && Q < landmarks.q3 && T < 100) {
+        title = 'Water Heating Toward Boiling Point';
+        badge = `Temp: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
+        icon = 'flame';
+        text = `
+          <div>• <strong>Phase:</strong> Liquid (Water heated).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Sensible Heat (<i>Q = m·c<sub>water</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> Heat increases water temperature from 0°C to 100°C. Convection bubbles start forming.</div>
+        `;
+      } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
+        const pctVapor = Math.round(state.vaporProgress * 100);
+        title = 'Boiling & Vaporizing (100°C)';
+        badge = `Boiling: ${pctVapor}%`;
+        badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
+        icon = 'cloud-fog';
+        text = `
+          <div>• <strong>Phase:</strong> Transition Liquid &rarr; Gas (Boiling Point 100°C).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Latent Heat of Vaporization (<i>Q = m·U</i> = 2,260 kJ/kg).</div>
+          <div>• <strong>Concept:</strong> Temperature stays at 100°C. Heat breaks intermolecular bonds, producing water vapor.</div>
+        `;
+      } else {
+        title = 'All Water Vaporized (Gas Phase)';
+        badge = 'Free Gas';
+        badgeClass = 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800';
+        icon = 'cloud';
+        text = `
+          <div>• <strong>Phase:</strong> Gas (Free Water Vapor).</div>
+          <div>• <strong>Heat Flow:</strong> Absorbs Sensible Heat (<i>Q = m·c<sub>steam</sub>·ΔT</i>).</div>
+          <div>• <strong>Concept:</strong> All water has turned into steam escaping into the air. The beaker is now dry.</div>
+        `;
+      }
+    }
+  } else {
+    // 1. ZONA: FREEZER (-10°C)
+    if (zone === 'freezer') {
+      if (T <= -9.9 && Q <= 0.05) {
+        title = 'Keseimbangan Termal di Freezer';
+        badge = 'Suhu Stabil -10°C';
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Padat (Es Batu).</div>
+          <div>• <strong>Aliran Kalor:</strong> Tidak ada perpindahan kalor (ΔT = 0).</div>
+          <div>• <strong>Konsep:</strong> Suhu es sama dengan suhu freezer (-10°C), sistem dalam kesetimbangan termal.</div>
+        `;
+      } else if (Q >= landmarks.q3) {
+        const persenEmbun = Math.round((1 - state.vaporProgress) * 100);
+        title = 'Uap Mengembun di Freezer (100°C)';
+        badge = `Mengembun: ${persenEmbun}%`;
+        badgeClass = 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Gas &rarr; Cair (Kondensasi 100°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Laten Pengembunan (<i>Q = m·U</i> = 2.260 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Uap air melepas kalor laten dalam jumlah besar ke freezer hingga mengembun kembali menjadi air cair pada suhu 100°C.</div>
+        `;
+      } else if (Q >= landmarks.q2 && Q < landmarks.q3) {
+        title = 'Air Melepas Kalor ke Freezer';
+        badge = `Air Mendingin: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Cair (Air mendingin menuju titik beku 0°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Sensibel (<i>Q = m·c<sub>air</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Air melepas kalor ke lingkungan freezer (-10°C) sehingga energi kinetik molekul menurun dan suhunya turun menuju 0°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const persenBeku = Math.round((1 - state.meltProgress) * 100);
+        title = 'Proses Membeku di Freezer (0°C)';
+        badge = `Membeku: ${persenBeku}%`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Cair &rarr; Padat (Titik Beku 0°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Laten Pembekuan (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Suhu tertahan di 0°C selama pembekuan. Air melepas kalor laten hingga seluruh cairan mengkristal menjadi es. Volume memuai ~9% akibat anomali air.</div>
+        `;
+      } else {
+        title = 'Pendinginan Es di Freezer';
+        badge = `Es Mendingin: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-800';
+        icon = 'snowflake';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Padat (Es mendingin).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Sensibel (<i>Q = m·c<sub>es</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Es yang telah beku sempurna terus melepas kalor sensibel hingga suhunya turun mencapai kesetimbangan di -10°C.</div>
+        `;
+      }
+    }
+
+    // 2. ZONA: SUHU RUANG (27°C)
+    else if (zone === 'suhuRuang') {
+      if (Q >= landmarks.q3) {
+        const persenEmbun = Math.round((1 - state.vaporProgress) * 100);
+        title = 'Uap Mengembun di Suhu Ruang (100°C)';
+        badge = `Mengembun: ${persenEmbun}%`;
+        badgeClass = 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Gas &rarr; Cair (Kondensasi 100°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Laten Pengembunan (<i>Q = m·U</i> = 2.260 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Uap air melepas kalor laten ke udara ruangan sehingga terkondensasi kembali menjadi tetesan air cair pada suhu tetap 100°C.</div>
+        `;
+      } else if (T > 27.5) {
+        title = 'Air Panas Melepas Kalor ke Ruangan';
+        badge = `Air Mendingin: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'wind';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Cair (Air mendingin secara alami).</div>
+          <div>• <strong>Aliran Kalor:</strong> Melepas Kalor Sensibel (<i>Q = m·c<sub>air</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Kalor mengalir spontan dari air panas ke udara ruangan sekitar sampai suhunya kembali stabil di 27°C.</div>
+        `;
+      } else if (T >= 26.5 && T <= 27.5) {
+        title = 'Kesetimbangan Termal di Ruangan';
+        badge = 'Suhu Stabil 27°C';
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'check-circle';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Cair (Air stabil 27°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Nol (suhu air = suhu ruang 27°C).</div>
+          <div>• <strong>Konsep:</strong> Suhu air setimbang dengan suhu ruangan, tidak terjadi perpindahan kalor.</div>
+        `;
+      } else if (Q >= landmarks.q2 && T < 26.5) {
+        title = 'Air Menyerap Kalor Menuju Suhu Ruang';
+        badge = `Air Memanas: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'droplet';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Cair (Air memanas perlahan).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Sensibel (<i>Q = m·c<sub>air</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Air menyerap kalor alami dari udara ruangan hingga suhunya mendekati 27°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const persenLebur = Math.round(state.meltProgress * 100);
+        title = 'Melebur di Suhu Ruang (0°C)';
+        badge = `Melebur: ${persenLebur}%`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'droplets';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Padat &rarr; Cair (Titik Lebur 0°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Laten Lebur (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Suhu tetap 0°C selama melebur. Massa zat tetap ${massG} g (kekal), volume menyusut ~8,3% akibat anomali air.</div>
+        `;
+      } else {
+        title = 'Es Menyerap Kalor Udara Ruang';
+        badge = `Es Memanas: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+        icon = 'thermometer-sun';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Padat (Es memanas).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Sensibel (<i>Q = m·c<sub>es</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Es menyerap kalor dari udara 27°C sehingga suhu es naik menuju titik lebur 0°C.</div>
+        `;
+      }
+    }
+
+    // 3. ZONA: KOMPOR (150°C)
+    else if (zone === 'kompor') {
+      const flameTxt = state.flameLevel === 1 ? 'Kecil' : (state.flameLevel === 2 ? 'Sedang' : 'Besar');
+
+      if (Q < landmarks.q1 && T < 0) {
+        title = 'Es Dipanaskan Kompor: Suhu Cepat Naik';
+        badge = `Api ${flameTxt}`;
+        badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
+        icon = 'flame';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Padat (Es memanas cepat).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Sensibel (<i>Q = m·c<sub>es</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Kalor dari nyala kompor menaikkan energi kinetik molekul es menuju 0°C.</div>
+        `;
+      } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+        const persenLebur = Math.round(state.meltProgress * 100);
+        title = 'Proses Melebur di Kompor (0°C)';
+        badge = `Melebur: ${persenLebur}%`;
+        badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
+        icon = 'layers';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Padat &rarr; Cair (Titik Lebur 0°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Laten Lebur (<i>Q = m·L</i> = 336 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Suhu tertahan di 0°C selama melebur. Massa ${massG} g tetap kekal, volume sedikit menyusut.</div>
+        `;
+      } else if (Q >= landmarks.q2 && Q < landmarks.q3 && T < 100) {
+        title = 'Pemanasan Air Menuju Titik Didih';
+        badge = `Suhu: ${T.toFixed(1)}°C`;
+        badgeClass = 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300 border-orange-300 dark:border-orange-800';
+        icon = 'flame';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Cair (Air dipanaskan).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Sensibel (<i>Q = m·c<sub>air</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Kalor menaikkan suhu air dari 0°C ke titik didih 100°C. Gelembung konveksi mulai terbentuk.</div>
+        `;
+      } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
+        const persenUap = Math.round(state.vaporProgress * 100);
+        title = 'Mendidih & Menguap (100°C)';
+        badge = `Menguap: ${persenUap}%`;
+        badgeClass = 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800';
+        icon = 'cloud-fog';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Transisi Cair &rarr; Gas (Titik Didih 100°C).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Laten Penguapan (<i>Q = m·U</i> = 2.260 kJ/kg).</div>
+          <div>• <strong>Konsep:</strong> Suhu konstan 100°C. Kalor digunakan memutus ikatan antarmolekul menjadi uap air.</div>
+        `;
+      } else {
+        title = 'Semua Air Menguap (Fase Gas)';
+        badge = 'Gas Bebas';
+        badgeClass = 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800';
+        icon = 'cloud';
+        text = `
+          <div>• <strong>Fase Zat:</strong> Gas (Uap Air Bebas).</div>
+          <div>• <strong>Aliran Kalor:</strong> Menyerap Kalor Sensibel (<i>Q = m·c<sub>uap</sub>·ΔT</i>).</div>
+          <div>• <strong>Konsep:</strong> Seluruh air telah menguap membubung ke udara. Wadah kini kering.</div>
+        `;
+      }
     }
   }
 
@@ -546,9 +1392,45 @@ function setSpeed(s) {
   });
 }
 
+function syncTempDropdown(num) {
+  const sel = document.getElementById('initialTempSelect');
+  if (!sel) return;
+  const numStr = String(num);
+  let matched = false;
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === numStr) {
+      sel.selectedIndex = i;
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) {
+    sel.value = 'custom';
+  }
+}
+
 function onInitialTempChange(val) {
   sound.playClick();
-  state.initialTemp = parseFloat(val);
+  const inputEl = document.getElementById('customTempInput');
+  if (val === 'custom') {
+    if (inputEl) {
+      inputEl.focus();
+      inputEl.select();
+    }
+    return;
+  }
+  const num = parseFloat(val);
+  state.initialTemp = num;
+  if (inputEl) inputEl.value = num;
+  resetSimulation();
+}
+
+function onCustomTempInput(val) {
+  let num = parseFloat(val);
+  if (isNaN(num)) return;
+  num = Math.max(-20, Math.min(120, num));
+  state.initialTemp = num;
+  syncTempDropdown(num);
   resetSimulation();
 }
 
@@ -567,12 +1449,16 @@ function togglePlayPause() {
   if (state.isPlaying) {
     state.lastTimestamp = performance.now();
     if (wrapper) wrapper.innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5 fill-white"></i>';
-    if (label) label.textContent = 'Jeda';
+    if (label) label.textContent = currentLang === 'en' ? 'Pause' : 'Jeda';
     btnPlayPause.classList.remove('bg-[#E5232B]', 'hover:bg-[#BF1219]');
     btnPlayPause.classList.add('bg-amber-600', 'hover:bg-amber-700');
   } else {
     if (wrapper) wrapper.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>';
-    if (label) label.textContent = 'Mulai';
+    if (label) {
+      label.textContent = state.heatTotal > 0
+        ? (currentLang === 'en' ? 'Resume' : 'Lanjut')
+        : (currentLang === 'en' ? 'Start' : 'Mulai');
+    }
     btnPlayPause.classList.remove('bg-amber-600', 'hover:bg-amber-700');
     btnPlayPause.classList.add('bg-[#E5232B]', 'hover:bg-[#BF1219]');
   }
@@ -581,11 +1467,12 @@ function togglePlayPause() {
 
 function resetSimulation() {
   sound.playClick();
-  state.temp = state.initialTemp;
-  state.heatTotal = 0;
+  const init = getInitialThermalState(state.initialTemp, state.mass);
+  state.temp = init.temp;
+  state.heatTotal = init.heatTotal;
   state.simTime = 0;
-  state.meltProgress = 0;
-  state.vaporProgress = 0;
+  state.meltProgress = init.meltProgress;
+  state.vaporProgress = init.vaporProgress;
   state.steamParticles = [];
   state.bubbles = [];
 
@@ -593,12 +1480,27 @@ function resetSimulation() {
   const wrapper = document.getElementById('playIconWrapper');
   const label = document.getElementById('playLabel');
   if (wrapper) wrapper.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>';
-  if (label) label.textContent = 'Mulai';
+  if (label) label.textContent = currentLang === 'en' ? 'Start' : 'Mulai';
   btnPlayPause.classList.remove('bg-amber-600', 'hover:bg-amber-700');
   btnPlayPause.classList.add('bg-[#E5232B]', 'hover:bg-[#BF1219]');
   lucide.createIcons();
 
-  setZone('freezer');
+  // Atur zona lingkungan awal yang sesuai dengan suhu awal
+  if (state.initialTemp <= 0) {
+    setZone('freezer');
+  } else if (state.initialTemp <= 40) {
+    setZone('suhuRuang');
+  } else {
+    setZone('kompor');
+  }
+
+  // Sinkronisasi dropdown pilihan dan input angka suhu
+  syncTempDropdown(state.initialTemp);
+  const inputEl = document.getElementById('customTempInput');
+  if (inputEl && parseFloat(inputEl.value) !== state.initialTemp) {
+    inputEl.value = state.initialTemp;
+  }
+
   render();
   if (isProcessInfoOpen) updateProcessInfo();
 }
@@ -638,7 +1540,7 @@ function updatePhysics(dt) {
   const m = state.mass;
 
   if (Q < landmarks.q1) {
-    state.temp = state.initialTemp + (Q / (m * C_ES));
+    state.temp = landmarks.tBase + (Q / (m * C_ES));
     state.meltProgress = 0;
     state.vaporProgress = 0;
   } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
@@ -664,8 +1566,13 @@ function updatePhysics(dt) {
     }
   }
 
-  if (state.zone === 'freezer' && Q <= 0) {
-    state.temp = state.initialTemp;
+  // Batas pendinginan freezer (-10°C)
+  if (state.zone === 'freezer' && state.temp <= -10.0 && heatRate <= 0) {
+    const qFreezerLimit = landmarks.tBase === -10 ? 0 : (m * C_ES * (-10 - landmarks.tBase));
+    if (state.heatTotal <= qFreezerLimit) {
+      state.heatTotal = qFreezerLimit;
+      state.temp = -10.0;
+    }
   }
 }
 
@@ -788,6 +1695,29 @@ function renderBeaker() {
     }
 
     bCtx.restore();
+  } else {
+    // Tatakan meja lab / rak pendingin saat di Freezer atau Suhu Ruang (Grounding Beaker)
+    const benchY = 152;
+    bCtx.save();
+    // Tatakan cawan isolator keramik
+    bCtx.fillStyle = isDark ? '#1e293b' : '#e2e8f0';
+    bCtx.strokeStyle = isDark ? '#334155' : '#cbd5e1';
+    bCtx.lineWidth = 1.5;
+    bCtx.beginPath();
+    bCtx.roundRect(w / 2 - 80, benchY, 160, 8, 3);
+    bCtx.fill();
+    bCtx.stroke();
+
+    // Permukaan meja laboratorium
+    bCtx.fillStyle = isDark ? '#0f172a' : '#f8fafc';
+    bCtx.fillRect(w / 2 - 110, benchY + 8, 220, h - (benchY + 8));
+    bCtx.strokeStyle = isDark ? '#334155' : '#e2e8f0';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.moveTo(w / 2 - 110, benchY + 8);
+    bCtx.lineTo(w / 2 + 110, benchY + 8);
+    bCtx.stroke();
+    bCtx.restore();
   }
 
   // 2. Beaker Dimensions
@@ -829,8 +1759,8 @@ function renderBeaker() {
     bCtx.restore();
   }
 
-  // 4. Gelembung Air Mendidih
-  if (state.temp >= 98 && state.vaporProgress < 1) {
+  // 4. Gelembung Air Mendidih (Hanya diproduksi jika aktif dipanaskan di kompor)
+  if (state.temp >= 98 && state.vaporProgress < 1 && state.zone === 'kompor') {
     if (Math.random() < 0.6) {
       state.bubbles.push({
         x: bx + 14 + Math.random() * (bw - 28),
@@ -1004,18 +1934,49 @@ function renderMolecules() {
   const isBoiling = state.vaporProgress > 0 && state.vaporProgress < 1;
   const isSolid = state.meltProgress === 0;
   const isLiquid = state.meltProgress === 1 && state.vaporProgress === 0;
+  const isCooling = isCoolingProcess();
   const descEl = document.getElementById('moleculeDesc');
 
-  if (isSolid) {
-    descEl.textContent = 'Padat: Molekul bergetar teratur di tempat';
-  } else if (isMelting) {
-    descEl.textContent = 'Melebur: Sebagian molekul mulai lepas & mengalir';
-  } else if (isLiquid) {
-    descEl.textContent = 'Cair: Molekul bebas mengalir berdekatan';
-  } else if (isBoiling) {
-    descEl.textContent = 'Mendidih: Molekul melesat lepas jadi uap';
+  if (currentLang === 'en') {
+    if (isSolid) {
+      descEl.textContent = 'Solid: Molecules vibrate orderly in place';
+    } else if (isMelting) {
+      descEl.textContent = isCooling
+        ? 'Freezing: Molecules lock together into ice crystal lattice'
+        : 'Melting: Molecules begin breaking loose and flowing';
+    } else if (isLiquid) {
+      descEl.textContent = isCooling
+        ? 'Liquid: Molecular kinetic energy decreases while cooling'
+        : 'Liquid: Molecules flow freely close together';
+    } else if (isBoiling) {
+      descEl.textContent = isCooling
+        ? 'Condensing: Steam molecules recondense into liquid droplets'
+        : 'Boiling: High-energy molecules escape rapidly as steam';
+    } else {
+      descEl.textContent = isCooling
+        ? 'Gas: Steam loses heat and contracts'
+        : 'Gas: Molecules move freely and rapidly at random';
+    }
   } else {
-    descEl.textContent = 'Gas: Molekul bergerak acak & bebas';
+    if (isSolid) {
+      descEl.textContent = 'Padat: Molekul bergetar teratur di tempat';
+    } else if (isMelting) {
+      descEl.textContent = isCooling
+        ? 'Membeku: Molekul merapat & terkunci membentuk kristal es'
+        : 'Melebur: Sebagian molekul mulai lepas & mengalir';
+    } else if (isLiquid) {
+      descEl.textContent = isCooling
+        ? 'Cair: Energi kinetik molekul menurun saat mendingin'
+        : 'Cair: Molekul bebas mengalir berdekatan';
+    } else if (isBoiling) {
+      descEl.textContent = isCooling
+        ? 'Mengembun: Molekul uap merapat kembali jadi tetesan cairan'
+        : 'Mendidih: Molekul melesat lepas jadi uap';
+    } else {
+      descEl.textContent = isCooling
+        ? 'Gas: Uap melepaskan kalor & merapat'
+        : 'Gas: Molekul bergerak acak & bebas';
+    }
   }
 
   state.particles.forEach((p, idx) => {
@@ -1069,19 +2030,20 @@ function renderGraph() {
   const w = graphCanvas.width;
   const h = graphCanvas.height;
   const isDark = document.documentElement.classList.contains('dark');
+  const isCooling = isCoolingProcess();
 
   const landmarks = getLandmarks(state.mass, state.initialTemp);
   // Kalor dan suhu dibatasi secara ketat dalam batas kurva A-F (q5 dan 120°C)
   const curQ = Math.max(0, Math.min(landmarks.q5, state.heatTotal));
-  const curT = Math.max(state.initialTemp, Math.min(120.0, state.temp));
+  const curT = Math.max(landmarks.tBase, Math.min(120.0, state.temp));
 
   const pts = [
-    { q: 0, t: state.initialTemp, label: 'A', desc: 'Es' },
-    { q: landmarks.q1, t: 0, label: 'B', desc: '0°C Lebur' },
-    { q: landmarks.q2, t: 0, label: 'C', desc: '0°C Cair' },
-    { q: landmarks.q3, t: 100, label: 'D', desc: '100°C Didih' },
-    { q: landmarks.q4, t: 100, label: 'E', desc: '100°C Uap' },
-    { q: landmarks.q5, t: 120, label: 'F', desc: '120°C Uap' }
+    { q: 0, t: landmarks.tBase, label: 'A', desc: currentLang === 'en' ? 'Ice' : 'Es' },
+    { q: landmarks.q1, t: 0, label: 'B', desc: currentLang === 'en' ? '0°C Melt' : '0°C Lebur' },
+    { q: landmarks.q2, t: 0, label: 'C', desc: currentLang === 'en' ? '0°C Liquid' : '0°C Cair' },
+    { q: landmarks.q3, t: 100, label: 'D', desc: currentLang === 'en' ? '100°C Boil' : '100°C Didih' },
+    { q: landmarks.q4, t: 100, label: 'E', desc: currentLang === 'en' ? '100°C Vapor' : '100°C Uap' },
+    { q: landmarks.q5, t: 120, label: 'F', desc: currentLang === 'en' ? '120°C Vapor' : '120°C Uap' }
   ];
 
   const segmentColors = ['#0ea5e9', '#10b981', '#2563eb', '#f59e0b', '#ef4444'];
@@ -1173,8 +2135,8 @@ function renderGraph() {
           : (isMajor ? '600 8.5px "Plus Jakarta Sans", sans-serif' : '7.5px "Plus Jakarta Sans", sans-serif');
         gCtx.textAlign = 'left';
         let txt = `${tVal}°C`;
-        if (tVal === 0) txt += ' (Lebur)';
-        else if (tVal === 100) txt += ' (Didih)';
+        if (tVal === 0) txt += isCooling ? (currentLang === 'en' ? ' (Freeze)' : ' (Beku)') : (currentLang === 'en' ? ' (Melt)' : ' (Lebur)');
+        else if (tVal === 100) txt += isCooling ? (currentLang === 'en' ? ' (Condense)' : ' (Embun)') : (currentLang === 'en' ? ' (Boil)' : ' (Didih)');
         gCtx.fillText(txt, 8, sy - 3);
       }
     }
@@ -1192,10 +2154,13 @@ function renderGraph() {
         gCtx.stroke();
         gCtx.setLineDash([]);
 
-        gCtx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-        gCtx.font = '8px "Plus Jakarta Sans", sans-serif';
-        gCtx.textAlign = 'center';
-        gCtx.fillText((p.q / 1000).toFixed(1) + ' kJ', sx, h - 6);
+        // Jangan timpa teks pada area mini-map di pojok kanan bawah
+        if (sx < w - 108) {
+          gCtx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+          gCtx.font = '8px "Plus Jakarta Sans", sans-serif';
+          gCtx.textAlign = 'center';
+          gCtx.fillText((p.q / 1000).toFixed(1) + ' kJ', sx, h - 6);
+        }
       }
     });
 
@@ -1307,7 +2272,7 @@ function renderGraph() {
       return mmX + mmPad + (getQWorldX(q) / 1040) * mmPlotW;
     }
     function mmMapY(t) {
-      return mmY + mmPad + mmPlotH - ((t - state.initialTemp) / (120 - state.initialTemp)) * mmPlotH;
+      return mmY + mmPad + mmPlotH - ((t - landmarks.tBase) / (120 - landmarks.tBase)) * mmPlotH;
     }
 
     for (let i = 0; i < pts.length - 1; i++) {
@@ -1333,7 +2298,7 @@ function renderGraph() {
     gCtx.fillStyle = isDark ? '#94a3b8' : '#64748b';
     gCtx.font = '700 7px "Plus Jakarta Sans", sans-serif';
     gCtx.textAlign = 'left';
-    gCtx.fillText('PETA A-F', mmX + 5, mmY + mmH - 3);
+    gCtx.fillText(currentLang === 'en' ? 'MAP A-F' : 'PETA A-F', mmX + 5, mmY + mmH - 3);
 
     gCtx.restore();
 
@@ -1388,7 +2353,10 @@ function renderGraph() {
     gCtx.fillStyle = isDark ? '#cbd5e1' : '#475569';
     gCtx.font = '600 9px "Plus Jakarta Sans", sans-serif';
     gCtx.textAlign = 'center';
-    gCtx.fillText('Kalor Diserap Q (kJ)', padL + plotW / 2, h - 8);
+    const axisTitle = currentLang === 'en'
+      ? (isCooling ? 'Heat Flow Q (kJ) - Released' : 'Heat Absorbed Q (kJ)')
+      : (isCooling ? 'Aliran Kalor Q (kJ) - Pelepasan' : 'Kalor Diserap Q (kJ)');
+    gCtx.fillText(axisTitle, padL + plotW / 2, h - 8);
 
     // Garis kurva
     for (let i = 0; i < pts.length - 1; i++) {
@@ -1442,7 +2410,9 @@ function updateUI() {
 
   const kj = (state.heatTotal / 1000).toFixed(1);
   displayHeatKJ.textContent = kj;
-  displayHeatJ.textContent = `(${Math.round(state.heatTotal).toLocaleString('id-ID')} Joule)`;
+  const unitJoule = currentLang === 'en' ? 'Joules' : 'Joule';
+  const locale = currentLang === 'en' ? 'en-US' : 'id-ID';
+  displayHeatJ.textContent = `(${Math.round(state.heatTotal).toLocaleString(locale)} ${unitJoule})`;
 
   // Update Telemetri Waktu Proses Simulasi (t)
   const displayTimeEl = document.getElementById('displayTime');
@@ -1454,45 +2424,135 @@ function updateUI() {
     displayTimeEl.textContent = `${mm}:${ss}`;
   }
   if (displayTimeSubEl) {
-    displayTimeSubEl.textContent = `${state.simTime.toFixed(1)} detik`;
+    const unitSec = currentLang === 'en' ? 'sec' : 'detik';
+    displayTimeSubEl.textContent = `${state.simTime.toFixed(1)} ${unitSec}`;
   }
 
   // Kompatibilitas Telemetri Massa & Volume jika dipanggil
   const mv = getMassAndVolume();
   if (typeof displayMass !== 'undefined' && displayMass) displayMass.textContent = mv.totalMass.toFixed(0);
   if (typeof displayVolume !== 'undefined' && displayVolume) displayVolume.textContent = `${mv.totalVol.toFixed(1)} mL`;
+  const isCooling = isCoolingProcess();
+
   if (typeof displayAnomalyStatus !== 'undefined' && displayAnomalyStatus) {
     if (state.meltProgress === 0) {
-      displayAnomalyStatus.textContent = 'Padat (Es Berongga)';
+      displayAnomalyStatus.textContent = currentLang === 'en' ? 'Solid (Hollow Ice)' : 'Padat (Es Berongga)';
     } else if (state.meltProgress > 0 && state.meltProgress < 1) {
-      displayAnomalyStatus.textContent = `Menyusut ke ${mv.finalWaterVol.toFixed(0)} mL (Anomali)`;
+      displayAnomalyStatus.textContent = isCooling
+        ? (currentLang === 'en' ? `Expands to ${(mv.finalWaterVol * 1.09).toFixed(0)} mL (Freezing)` : `Memuai ke ${(mv.finalWaterVol * 1.09).toFixed(0)} mL (Membeku)`)
+        : (currentLang === 'en' ? `Shrinks to ${mv.finalWaterVol.toFixed(0)} mL (Melting)` : `Menyusut ke ${mv.finalWaterVol.toFixed(0)} mL (Melebur)`);
     } else if (state.meltProgress >= 1 && state.vaporProgress === 0) {
-      displayAnomalyStatus.textContent = `Massa ${mv.massG}g Kekal`;
+      displayAnomalyStatus.textContent = currentLang === 'en' ? `Mass ${mv.massG}g Conserved` : `Massa ${mv.massG}g Kekal`;
     } else if (state.vaporProgress > 0 && state.vaporProgress < 1) {
-      displayAnomalyStatus.textContent = `Menguap (Sisa ${mv.totalMass.toFixed(0)}g)`;
+      displayAnomalyStatus.textContent = isCooling
+        ? (currentLang === 'en' ? `Condensing (Liquid ${mv.waterVol.toFixed(0)} mL)` : `Mengembun (Cair ${mv.waterVol.toFixed(0)} mL)`)
+        : (currentLang === 'en' ? `Vaporizing (Remaining ${mv.totalMass.toFixed(0)}g)` : `Menguap (Sisa ${mv.totalMass.toFixed(0)}g)`);
     } else {
-      displayAnomalyStatus.textContent = 'Uap Bebas (Kering)';
+      displayAnomalyStatus.textContent = currentLang === 'en' ? 'Free Vapor (Dry)' : 'Uap Bebas (Kering)';
     }
+  }
+
+  // Update Teks Legenda Grafik (Adaptif terhadap Pemanasan / Pendinginan)
+  const legAB = document.getElementById('legendAB');
+  const legBC = document.getElementById('legendBC');
+  const legCD = document.getElementById('legendCD');
+  const legDE = document.getElementById('legendDE');
+  if (currentLang === 'en') {
+    if (legAB) legAB.textContent = isCooling ? 'A-B: Ice Cooling' : 'A-B: Ice Heating';
+    if (legBC) legBC.textContent = isCooling ? 'B-C: Freezing' : 'B-C: Melting';
+    if (legCD) legCD.textContent = isCooling ? 'C-D: Water Cooling' : 'C-D: Water Heating';
+    if (legDE) legDE.textContent = isCooling ? 'D-E: Condensing' : 'D-E: Boiling';
+  } else {
+    if (legAB) legAB.textContent = isCooling ? 'A-B: Es Mendingin' : 'A-B: Es Memanas';
+    if (legBC) legBC.textContent = isCooling ? 'B-C: Membeku' : 'B-C: Melebur';
+    if (legCD) legCD.textContent = isCooling ? 'C-D: Air Mendingin' : 'C-D: Air Memanas';
+    if (legDE) legDE.textContent = isCooling ? 'D-E: Mengembun' : 'D-E: Menguap';
   }
 
   const landmarks = getLandmarks(state.mass, state.initialTemp);
   const Q = state.heatTotal;
+  const minEsTemp = state.initialTemp < 0 ? state.initialTemp : landmarks.tBase;
 
-  if (Q < landmarks.q1) {
-    badgeFaseZat.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Padat (Es ${state.initialTemp}°C &rarr; 0°C)`;
-    badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs';
-  } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
-    badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Melebur (0°C Tetap)';
-    badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs';
-  } else if (Q >= landmarks.q2 && Q < landmarks.q3) {
-    badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Cair (Air 0°C &rarr; 100°C)';
-    badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs';
-  } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
-    badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Mendidih / Menguap (100°C)';
-    badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-2xs';
+  if (currentLang === 'en') {
+    if (Q < landmarks.q1) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Solid (Ice Cooling 0°C &rarr; ${minEsTemp}°C)`;
+      } else {
+        badgeFaseZat.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Solid (Ice ${minEsTemp}°C &rarr; 0°C)`;
+      }
+      badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs';
+    } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Freezing (0°C Constant)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Melting (0°C Constant)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs';
+      }
+    } else if (Q >= landmarks.q2 && Q < landmarks.q3) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Liquid (Water Cooling 100°C &rarr; 0°C)';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Liquid (Water Heating 0°C &rarr; 100°C)';
+      }
+      badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs';
+    } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Condensing (100°C Constant)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Boiling / Vaporizing (100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-2xs';
+      }
+    } else {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> Gas (Steam Cooling > 100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Gas (Steam > 100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-2xs';
+      }
+    }
   } else {
-    badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Gas (Uap Air > 100°C)';
-    badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-2xs';
+    if (Q < landmarks.q1) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Padat (Es Mendingin 0°C &rarr; ${minEsTemp}°C)`;
+      } else {
+        badgeFaseZat.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Padat (Es ${minEsTemp}°C &rarr; 0°C)`;
+      }
+      badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs';
+    } else if (Q >= landmarks.q1 && Q < landmarks.q2) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Membeku (0°C Tetap)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Melebur (0°C Tetap)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs';
+      }
+    } else if (Q >= landmarks.q2 && Q < landmarks.q3) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Cair (Air Mendingin 100°C &rarr; 0°C)';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Cair (Air Memanas 0°C &rarr; 100°C)';
+      }
+      badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs';
+    } else if (Q >= landmarks.q3 && Q < landmarks.q4) {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Mengembun (100°C Tetap)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Mendidih / Menguap (100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-2xs';
+      }
+    } else {
+      if (isCooling) {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> Gas (Uap Mendingin > 100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-2xs';
+      } else {
+        badgeFaseZat.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Gas (Uap Air > 100°C)';
+        badgeFaseZat.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-2xs';
+      }
+    }
   }
 
   if (isProcessInfoOpen) {
@@ -1556,62 +2616,122 @@ window.addEventListener('keydown', e => {
   }
 });
 
-// --- KUIS INTERAKTIF KALOR IPA KELAS 7 ---
+// --- KUIS INTERAKTIF KALOR IPA KELAS 7 (BILINGUAL ID & EN) ---
 const quizData = [
   {
-    q: '1. Mengapa saat es melebur pada 0°C (segmen B-C) suhunya tidak naik meski terus menyerap kalor?',
-    options: [
-      'Karena termometer di dalam wadah tidak bekerja',
-      'Karena kalor digunakan untuk merusak ikatan molekul es (kalor laten), bukan menaikkan suhu',
-      'Karena kalor langsung hilang seluruhnya ke udara bebas',
-      'Karena massa es berkurang secara drastis'
-    ],
-    answer: 1,
-    expl: 'Benar! Kalor laten (Q = m × L) digunakan khusus untuk mengubah wujud zat dari padat ke cair, bukan untuk menaikkan suhu.'
+    id: {
+      q: '1. Mengapa saat es melebur pada 0°C (segmen B-C) suhunya tidak naik meski terus menyerap kalor?',
+      options: [
+        'Karena termometer di dalam wadah tidak bekerja',
+        'Karena kalor digunakan untuk merusak ikatan molekul es (kalor laten), bukan menaikkan suhu',
+        'Karena kalor langsung hilang seluruhnya ke udara bebas',
+        'Karena massa es berkurang secara drastis'
+      ],
+      expl: 'Benar! Kalor laten (Q = m × L) digunakan khusus untuk mengubah wujud zat dari padat ke cair, bukan untuk menaikkan suhu.'
+    },
+    en: {
+      q: '1. Why does the temperature of ice remain at 0°C (segment B-C) during melting even as it absorbs heat?',
+      options: [
+        'Because the thermometer inside the container is malfunctioning',
+        'Because heat is consumed to break intermolecular bonds (latent heat), rather than raise temperature',
+        'Because heat escapes completely into the ambient air',
+        'Because the mass of the ice drastically decreases'
+      ],
+      expl: 'Correct! Latent heat (Q = m × L) is exclusively used to change the state from solid to liquid, not to increase temperature.'
+    },
+    answer: 1
   },
   {
-    q: '2. Seberapa besar kalor yang dibutuhkan untuk merubah wujud zat padat menjadi cair disebut...',
-    options: [
-      'Kalor jenis zat',
-      'Kalor laten lebur',
-      'Kapasitas kalor',
-      'Suhu mutlak'
-    ],
-    answer: 1,
-    expl: 'Tepat! Kalor laten lebur (L) adalah banyaknya kalor yang diperlukan oleh 1 kg zat untuk berubah wujud dari padat menjadi cair pada titik leburnya.'
+    id: {
+      q: '2. Seberapa besar kalor yang dibutuhkan untuk merubah wujud zat padat menjadi cair disebut...',
+      options: [
+        'Kalor jenis zat',
+        'Kalor laten lebur',
+        'Kapasitas kalor',
+        'Suhu mutlak'
+      ],
+      expl: 'Tepat! Kalor laten lebur (L) adalah banyaknya kalor yang diperlukan oleh 1 kg zat untuk berubah wujud dari padat menjadi cair pada titik leburnya.'
+    },
+    en: {
+      q: '2. The amount of heat required to change the state of a solid substance into a liquid is called...',
+      options: [
+        'Specific heat capacity',
+        'Latent heat of fusion',
+        'Heat capacity',
+        'Absolute temperature'
+      ],
+      expl: 'Spot on! Latent heat of fusion (L) is the amount of heat required by 1 kg of a substance to change from solid to liquid at its melting point.'
+    },
+    answer: 1
   },
   {
-    q: '3. Jika es diletakkan di suhu ruang bersuhu 27°C, arah perpindahan kalor yang benar adalah...',
-    options: [
-      'Dari es menuju udara sekitar',
-      'Dari udara sekitar menuju es yang lebih dingin',
-      'Tidak ada perpindahan kalor sama sekali',
-      'Bolak-balik tanpa henti'
-    ],
-    answer: 1,
-    expl: 'Tepat! Kalor selalu mengalir secara alami dari lingkungan bersuhu lebih tinggi ke benda bersuhu lebih rendah.'
+    id: {
+      q: '3. Jika es diletakkan di suhu ruang bersuhu 27°C, arah perpindahan kalor yang benar adalah...',
+      options: [
+        'Dari es menuju udara sekitar',
+        'Dari udara sekitar menuju es yang lebih dingin',
+        'Tidak ada perpindahan kalor sama sekali',
+        'Bolak-balik tanpa henti'
+      ],
+      expl: 'Tepat! Kalor selalu mengalir secara alami dari lingkungan bersuhu lebih tinggi ke benda bersuhu lebih rendah.'
+    },
+    en: {
+      q: '3. If ice is placed at room temperature (27°C), the correct direction of heat transfer is...',
+      options: [
+        'From the ice toward ambient air',
+        'From the ambient air toward the colder ice',
+        'No heat transfer occurs at all',
+        'Alternating back and forth continuously'
+      ],
+      expl: 'Correct! Heat always flows spontaneously from a higher temperature environment to a lower temperature object.'
+    },
+    answer: 1
   },
   {
-    q: '4. Bagaimana susunan dan pergerakan molekul ketika zat berubah wujud menjadi uap air (gas)?',
-    options: [
-      'Molekul tersusun rapi dan hanya bergetar di tempat',
-      'Molekul berdekatan dan mengalir bebas',
-      'Molekul sangat berjauhan dan bergerak sangat cepat acak',
-      'Molekul diam dan membeku'
-    ],
-    answer: 2,
-    expl: 'Benar! Pada wujud gas (uap), partikel saling berjauhan, ikatan molekul terputus, dan bergerak sangat cepat acak.'
+    id: {
+      q: '4. Bagaimana susunan dan pergerakan molekul ketika zat berubah wujud menjadi uap air (gas)?',
+      options: [
+        'Molekul tersusun rapi dan hanya bergetar di tempat',
+        'Molekul berdekatan dan mengalir bebas',
+        'Molekul sangat berjauhan dan bergerak sangat cepat acak',
+        'Molekul diam dan membeku'
+      ],
+      expl: 'Benar! Pada wujud gas (uap), partikel saling berjauhan, ikatan molekul terputus, dan bergerak sangat cepat acak.'
+    },
+    en: {
+      q: '4. How are molecules arranged and behaving when water transitions into water vapor (gas)?',
+      options: [
+        'Molecules are tightly arranged in regular rows vibrating in place',
+        'Molecules remain close together flowing past one another',
+        'Molecules are far apart and move rapidly in random directions',
+        'Molecules become completely motionless and frozen'
+      ],
+      expl: 'Correct! In the gas phase (steam), molecules are far apart with broken intermolecular bonds and rapid, random movement.'
+    },
+    answer: 2
   },
   {
-    q: '5. Berdasarkan hukum kekekalan massa dan sifat anomali air, apa yang terjadi saat 100 gram es batu melebur seutuhnya menjadi air?',
-    options: [
-      'Massanya tetap 100 gram, tetapi volumenya sedikit menyusut (berkurang ~8,3%)',
-      'Massanya berkurang karena sebagian partikel mencair, volumenya tetap',
-      'Massanya bertambah karena menyerap banyak partikel kalor',
-      'Massa dan volumenya berlipat ganda'
-    ],
-    answer: 0,
-    expl: 'Luar biasa! Hukum kekekalan massa membuktikan massa materi selalu tetap (100 gram). Namun akibat anomali pemuaian air (kristal es berongga dengan massa jenis 0,92 g/cm³ lebih kecil dari air 1,0 g/cm³), volumenya sedikit menyusut sekitar 8,3%.'
+    id: {
+      q: '5. Berdasarkan hukum kekekalan massa dan sifat anomali air, apa yang terjadi saat 100 gram es batu melebur seutuhnya menjadi air?',
+      options: [
+        'Massanya tetap 100 gram, tetapi volumenya sedikit menyusut (berkurang ~8,3%)',
+        'Massanya berkurang karena sebagian partikel mencair, volumenya tetap',
+        'Massanya bertambah karena menyerap banyak partikel kalor',
+        'Massa dan volumenya berlipat ganda'
+      ],
+      expl: 'Luar biasa! Hukum kekekalan massa membuktikan massa materi selalu tetap (100 gram). Namun akibat anomali pemuaian air (kristal es berongga dengan massa jenis 0,92 g/cm³ lebih kecil dari air 1,0 g/cm³), volumenya sedikit menyusut sekitar 8,3%.'
+    },
+    en: {
+      q: '5. According to the conservation of mass and the anomalous expansion of water, what happens when 100 grams of ice melts completely into liquid water?',
+      options: [
+        'Mass remains 100 grams, but volume shrinks slightly (~8.3% decrease)',
+        'Mass decreases because some particles liquify while volume stays constant',
+        'Mass increases because it absorbs many heat particles',
+        'Both mass and volume double'
+      ],
+      expl: 'Excellent! The law of conservation of mass states that matter\'s mass remains conserved (100 grams). However, due to the anomaly of water (open hexagonal ice crystal lattice with lower density 0.92 g/cm³ vs liquid 1.0 g/cm³), its volume contracts by approximately 8.3%.'
+    },
+    answer: 0
   }
 ];
 
@@ -1621,14 +2741,16 @@ function renderQuiz() {
   const container = document.getElementById('quizContainer');
   if (!container) return;
   container.innerHTML = '';
+  const lang = currentLang;
 
   quizData.forEach((item, qIdx) => {
+    const localized = item[lang] || item.id;
     const card = document.createElement('div');
     card.className = 'bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5';
 
     const qTitle = document.createElement('p');
     qTitle.className = 'font-bold text-slate-800 dark:text-slate-100 text-xs';
-    qTitle.textContent = item.q;
+    qTitle.textContent = localized.q;
     card.appendChild(qTitle);
 
     const optsDiv = document.createElement('div');
@@ -1636,7 +2758,7 @@ function renderQuiz() {
 
     const isAnswered = userAnswers[qIdx] !== undefined;
 
-    item.options.forEach((opt, optIdx) => {
+    localized.options.forEach((opt, optIdx) => {
       const optBtn = document.createElement('button');
       let optClass = 'quiz-opt-btn ';
 
@@ -1661,7 +2783,9 @@ function renderQuiz() {
       const isCorrect = userAnswers[qIdx] === item.answer;
       const fb = document.createElement('div');
       fb.className = `p-2 rounded-lg text-xs mt-1 ${isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'}`;
-      fb.innerHTML = `<strong>${isCorrect ? '✅ Benar!' : '❌ Kurang tepat.'}</strong> ${item.expl}`;
+      const correctPrefix = lang === 'en' ? '✅ Correct!' : '✅ Benar!';
+      const incorrectPrefix = lang === 'en' ? '❌ Incorrect.' : '❌ Kurang tepat.';
+      fb.innerHTML = `<strong>${isCorrect ? correctPrefix : incorrectPrefix}</strong> ${localized.expl}`;
       card.appendChild(fb);
     }
 
@@ -1695,7 +2819,7 @@ function resetQuiz() {
 // --- INISIALISASI SETELAH DOM READY ---
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  renderQuiz();
+  applyLanguage();
   setZone('freezer');
   render();
   requestAnimationFrame(loop);
