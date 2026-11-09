@@ -1,0 +1,348 @@
+/* ========================================================
+   SIMULASI KALOR & PERUBAHAN WUJUD ZAT - SIDAFI STYLE SYSTEM
+   Media Pembelajaran Fisika / IPA Kelas 7 SMP
+   ======================================================== */
+
+/* --- Import Google Fonts (Plus Jakarta Sans, Inter, IBM Plex Mono) --- */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+  --red: #E5232B;
+  --red-dark: #BF1219;
+  --black: #1A1A1A;
+  --charcoal: #232323;
+  --white: #FFFFFF;
+  --gray: #64748B;
+  --gray-light: #F8FAFC;
+  --border: #E2E8F0;
+  --border-dark: #334155;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* --- Viewport & Base Typography --- */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--gray-light);
+  color: var(--black);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono-sidafi {
+  font-family: var(--font-mono);
+}
+
+.font-display-sidafi {
+  font-family: var(--font-display);
+}
+
+/* 1-Page Viewport Lock on Desktop (>= 1024px) */
+@media (min-width: 1024px) {
+  html, body {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+}
+
+/* --- Smooth Transitions --- */
+.btn-transition {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stage-transition {
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* --- SIDAFI Styled Buttons --- */
+.btn-sidafi-primary {
+  background-color: var(--red);
+  color: #ffffff;
+  border: 1px solid var(--red);
+  font-weight: 700;
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-sidafi-primary:hover {
+  background-color: var(--red-dark);
+  border-color: var(--red-dark);
+}
+.btn-sidafi-primary:focus-visible {
+  outline: 2px solid var(--black);
+  outline-offset: 2px;
+}
+
+.btn-sidafi-secondary {
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--black);
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-sidafi-secondary:hover {
+  border-color: var(--red);
+  color: var(--red);
+  background-color: rgba(229, 35, 43, 0.04);
+}
+
+.dark .btn-sidafi-secondary {
+  background-color: #1e293b;
+  border-color: var(--border-dark);
+  color: #e2e8f0;
+}
+.dark .btn-sidafi-secondary:hover {
+  border-color: var(--red);
+  color: #ffffff;
+  background-color: rgba(229, 35, 43, 0.15);
+}
+
+/* --- SIDAFI Stat Cards --- */
+.sidafi-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.sidafi-stat-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+.dark .sidafi-stat-card {
+  background: #0f172a;
+  border-color: var(--border-dark);
+}
+.dark .sidafi-stat-card:hover {
+  border-color: #475569;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+.dark .stat-label {
+  color: #94a3b8;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: var(--black);
+}
+.dark .stat-value {
+  color: #f8fafc;
+}
+
+/* --- Atmospheric Environmental Gradients (Light Mode) --- */
+.bg-stage-freezer {
+  background: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 100%);
+  border-color: #bae6fd !important;
+}
+
+.bg-stage-suhuruang {
+  background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%);
+  border-color: #bbf7d0 !important;
+}
+
+.bg-stage-kompor {
+  background: linear-gradient(180deg, #fff7ed 0%, #f8fafc 100%);
+  border-color: #fed7aa !important;
+}
+
+/* --- Atmospheric Environmental Gradients (Dark Mode) --- */
+.dark .bg-stage-freezer {
+  background: linear-gradient(180deg, #082f49 0%, #0f172a 100%);
+  border-color: #0369a1 !important;
+}
+
+.dark .bg-stage-suhuruang {
+  background: linear-gradient(180deg, #064e3b 0%, #0f172a 100%);
+  border-color: #047857 !important;
+}
+
+.dark .bg-stage-kompor {
+  background: linear-gradient(180deg, #431407 0%, #0f172a 100%);
+  border-color: #c2410c !important;
+}
+
+/* --- Modal Backdrop & Animations --- */
+.modal-backdrop {
+  animation: modalFadeIn 0.18s ease-out forwards;
+}
+
+.modal-panel {
+  animation: modalScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* --- Canvas Display Styles --- */
+canvas {
+  display: block;
+}
+
+#beakerCanvas {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+}
+
+#graphCanvas {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+}
+
+#moleculeCanvas {
+  background-color: #0f172a;
+}
+
+/* --- Quiz Option Cards (Light Mode) --- */
+.quiz-opt-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #334155;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.quiz-opt-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.quiz-opt-selected {
+  background-color: #fef2f2 !important;
+  border-color: var(--red) !important;
+  color: var(--red-dark) !important;
+  font-weight: 700 !important;
+}
+
+.quiz-opt-correct {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  color: #064e3b !important;
+  font-weight: 700 !important;
+}
+
+.quiz-opt-wrong {
+  background-color: #fff1f2 !important;
+  border-color: #f43f5e !important;
+  color: #881337 !important;
+  font-weight: 700 !important;
+}
+
+/* --- Quiz Option Cards (Dark Mode) --- */
+.dark .quiz-opt-btn {
+  background-color: #1e293b;
+  border-color: var(--border-dark);
+  color: #cbd5e1;
+}
+
+.dark .quiz-opt-btn:hover {
+  background-color: #334155;
+  border-color: #475569;
+}
+
+.dark .quiz-opt-selected {
+  background-color: rgba(229, 35, 43, 0.2) !important;
+  border-color: var(--red) !important;
+  color: #fecaca !important;
+  font-weight: 700 !important;
+}
+
+.dark .quiz-opt-correct {
+  background-color: #064e3b !important;
+  border-color: #34d399 !important;
+  color: #d1fae5 !important;
+  font-weight: 700 !important;
+}
+
+.dark .quiz-opt-wrong {
+  background-color: #4c0519 !important;
+  border-color: #f43f5e !important;
+  color: #ffe4e6 !important;
+  font-weight: 700 !important;
+}
+
+/* --- Sleek Custom Scrollbar --- */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* --- Interactive Elements Pointer & Focus Ring --- */
+button, select {
+  cursor: pointer;
+}
+
+button:focus-visible, select:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}

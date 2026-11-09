@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simulasi Kalor dan Perubahan Wujud Zat Interaktif untuk Siswa Kelas 7 SMP - Kurikulum Merdeka">
+  <title>Simulasi Kalor &amp; Perubahan Wujud Zat | IPA Kelas 7 SMP</title>
+
+  <!-- External CDN Dependencies -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Tailwind Configuration with SIDAFI Theme Palette -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            sidafi: {
+              red: '#E5232B',
+              'red-dark': '#BF1219',
+              black: '#1A1A1A',
+              charcoal: '#232323',
+              gray: '#64748B',
+              light: '#F8FAFC',
+              border: '#E2E8F0',
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- SIDAFI Application Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-[#E5232B] selection:text-white">
+
+  <!-- 1. HEADER (SIDAFI DESIGN LANGUAGE: CLEAN BRAND MARK & MINIMAL ACTION BAR) -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-3 sm:px-6 py-2 shrink-0">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      
+      <!-- SIDAFI-Style Brand Header -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-[#E5232B] text-white flex items-center justify-center shadow-xs shrink-0">
+          <i data-lucide="flame" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-display font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
+              Kalor<span class="text-[#E5232B]">&amp;</span>Wujud Zat
+            </h1>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950/40 text-[#E5232B] border border-red-200 dark:border-red-900/60 hidden sm:inline-block">
+              IPA SMP
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">Laboratorium Fisika Interaktif Titik Lebur, Mendidih &amp; Anomali Air</p>
+        </div>
+      </div>
+
+      <!-- Action Navigation Buttons (SIDAFI Button Style) -->
+      <div class="flex items-center gap-1.5 flex-wrap">
+        
+        <!-- Button: Informasi Lingkungan -->
+        <button onclick="openModal('modalPanduan')" class="btn-sidafi-secondary px-2.5 py-1 text-xs" title="Informasi Lingkungan">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+          <span>Informasi Lingkungan</span>
+        </button>
+
+        <!-- Button: Materi -->
+        <button onclick="openModal('modalMateri')" class="btn-sidafi-secondary px-2.5 py-1 text-xs" title="Rangkuman Materi Fisika">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+          <span>Materi</span>
+        </button>
+
+        <!-- Button: Kuis -->
+        <button onclick="openModal('modalKuis')" class="btn-sidafi-secondary px-2.5 py-1 text-xs border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 text-[#E5232B]" title="Kuis Konsep">
+          <i data-lucide="award" class="w-3.5 h-3.5 text-[#E5232B]"></i>
+          <span class="font-bold">Kuis</span>
+        </button>
+
+        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 hidden sm:block"></div>
+
+        <!-- Button: Mode Gelap/Terang -->
+        <button id="btnThemeToggle" onclick="toggleTheme()" class="btn-sidafi-secondary px-2 py-1 text-xs" title="Ganti Mode Gelap / Terang">
+          <span id="themeIconWrapper" class="flex items-center justify-center">
+            <i data-lucide="moon" class="w-3.5 h-3.5 text-slate-600 dark:text-amber-400"></i>
+          </span>
+          <span id="themeLabel" class="hidden sm:inline">Gelap</span>
+        </button>
+
+        <!-- Button: Reset -->
+        <button onclick="resetSimulation()" class="btn-sidafi-secondary px-2 py-1 text-xs hover:border-slate-400" title="Reset Semua Parameter">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Reset</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. MAIN SIMULATION WORKSPACE (2-COLUMN GRID, FIT 1 PAGE DESKTOP) -->
+  <main class="max-w-7xl mx-auto p-2 sm:p-2.5 w-full flex-1 flex flex-col gap-2 min-h-0">
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1 min-h-0 h-full">
+
+      <!-- LEFT COLUMN: WADAH FISIKA + KONTROL LINGKUNGAN (6 COLS) -->
+      <div class="lg:col-span-6 flex flex-col gap-2 h-full min-h-0">
+
+        <!-- KOTAK ILUSTRASI WADAH -->
+        <div id="stageContainer" class="bg-stage-freezer rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 relative overflow-hidden flex flex-col justify-between stage-transition flex-1 min-h-0">
+
+          <!-- 1. KONTROL 3 LINGKUNGAN (SIDAFI SEGMENTED TAB STYLE) -->
+          <div class="flex flex-col gap-1.5 z-10 shrink-0">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3 h-3 text-[#E5232B]"></i>
+                Lingkungan:
+              </span>
+              <!-- Status Fase Zat -->
+              <span id="badgeFaseZat" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-2xs">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                Padat (Es Batu)
+              </span>
+            </div>
+
+            <!-- Segmented Control 3 Pilihan Lingkungan -->
+            <div class="grid grid-cols-3 gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs">
+              
+              <!-- Pilihan 1: Freezer -->
+              <button id="zoneBtnFreezer" onclick="setZone('freezer')" 
+                class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-sky-500 text-white shadow-2xs">
+                <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+                <span>Freezer</span>
+                <span class="text-[9px] opacity-90 hidden sm:inline">(-10°C)</span>
+              </button>
+
+              <!-- Pilihan 2: Suhu Ruang -->
+              <button id="zoneBtnSuhuRuang" onclick="setZone('suhuRuang')" 
+                class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                <i data-lucide="thermometer-sun" class="w-3.5 h-3.5"></i>
+                <span>Suhu Ruang</span>
+                <span class="text-[9px] opacity-75 hidden sm:inline">(27°C)</span>
+              </button>
+
+              <!-- Pilihan 3: Kompor -->
+              <button id="zoneBtnKompor" onclick="setZone('kompor')" 
+                class="zone-btn flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-xs font-bold btn-transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+                <span>Kompor</span>
+                <span class="text-[9px] opacity-75 hidden sm:inline">(150°C)</span>
+              </button>
+
+            </div>
+
+          </div>
+
+          <!-- 2. KANVAS BEAKER GLASS (ILUSTRASI UTAMA) -->
+          <div class="flex items-center justify-center my-auto py-0.5 relative flex-1 min-h-0 overflow-hidden">
+            <canvas id="beakerCanvas" width="340" height="195" class="max-w-full max-h-full w-auto h-auto object-contain"></canvas>
+          </div>
+
+          <!-- 3. KONTROL INTENSITAS API KOMPOR -->
+          <div id="flameControls" class="hidden items-center justify-between bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border border-orange-200 dark:border-orange-900/50 px-2.5 py-1 rounded-lg shadow-2xs mb-1.5 z-10 shrink-0">
+            <span class="text-xs text-orange-950 dark:text-orange-200 font-bold flex items-center gap-1.5">
+              <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400"></i> Intensitas Api:
+            </span>
+            <div class="flex items-center gap-1">
+              <button onclick="setFlame(1)" id="btnFlame1" class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-orange-100 dark:hover:bg-orange-950/50 btn-transition">Kecil</button>
+              <button onclick="setFlame(2)" id="btnFlame2" class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-[#E5232B] text-white shadow-2xs btn-transition">Sedang</button>
+              <button onclick="setFlame(3)" id="btnFlame3" class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-orange-100 dark:hover:bg-orange-950/50 btn-transition">Besar</button>
+            </div>
+          </div>
+
+          <!-- 4. STATUS MIKROSKOPIS MOLEKUL PARTIKEL H2O (RINGKAS & TEPAT) -->
+          <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-lg p-1.5 border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between gap-2 z-10 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <canvas id="moleculeCanvas" width="48" height="26" class="rounded bg-slate-900 shrink-0"></canvas>
+              <div class="min-w-0">
+                <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 block tracking-wider">Partikel H<sub>2</sub>O:</span>
+                <span id="moleculeDesc" class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">Padat: Bergetar teratur di tempat</span>
+              </div>
+            </div>
+            <button onclick="openModal('modalMateri')" class="text-slate-400 hover:text-[#E5232B] p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition shrink-0" title="Pelajari Teori Partikel">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- TOOLBAR KONTROL SIMULASI (SIDAFI CARD & BUTTONS) -->
+        <div class="bg-white dark:bg-slate-900 rounded-lg p-2 border border-slate-200 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-1.5 shrink-0">
+          
+          <!-- Tombol Play / Pause (SIDAFI Red Accent) -->
+          <button id="btnPlayPause" onclick="togglePlayPause()" class="btn-sidafi-primary px-3 py-1.5 text-xs">
+            <span id="playIconWrapper" class="flex items-center justify-center">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
+            </span>
+            <span id="playLabel">Mulai</span>
+          </button>
+
+          <!-- Dropdown Suhu Awal -->
+          <div class="flex items-center gap-1">
+            <label for="initialTempSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Suhu Awal:</label>
+            <select id="initialTempSelect" onchange="onInitialTempChange(this.value)" class="text-xs font-mono font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-1 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#E5232B]">
+              <option value="-20">-20°C</option>
+              <option value="-15">-15°C</option>
+              <option value="-10" selected>-10°C (Standar)</option>
+              <option value="-5">-5°C</option>
+              <option value="0">0°C (Titik Lebur)</option>
+            </select>
+          </div>
+
+          <!-- Dropdown Pilihan Massa -->
+          <div class="flex items-center gap-1">
+            <label for="massSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Massa:</label>
+            <select id="massSelect" onchange="onMassChange(this.value)" class="text-xs font-mono font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-1 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#E5232B]">
+              <option value="0.05">50 g</option>
+              <option value="0.1" selected>100 g</option>
+              <option value="0.2">200 g</option>
+            </select>
+          </div>
+
+          <!-- Pemilih Laju Simulasi -->
+          <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 px-1">Laju:</span>
+            <button onclick="setSpeed(1)" class="speed-btn px-1.5 py-0.5 text-xs font-bold rounded bg-white dark:bg-slate-700 shadow-2xs text-[#E5232B] dark:text-red-400" data-speed="1">1x</button>
+            <button onclick="setSpeed(2)" class="speed-btn px-1.5 py-0.5 text-xs font-bold rounded text-slate-600 dark:text-slate-400 hover:text-[#E5232B]" data-speed="2">2x</button>
+            <button onclick="setSpeed(5)" class="speed-btn px-1.5 py-0.5 text-xs font-bold rounded text-slate-600 dark:text-slate-400 hover:text-[#E5232B]" data-speed="5">5x</button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: TELEMETRI & GRAFIK KALOR (6 COLS) -->
+      <div class="lg:col-span-6 flex flex-col gap-2 h-full min-h-0">
+
+        <!-- 3 KARTU STATISTIK TELEMETRI (SIDAFI STAT CARDS) -->
+        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 shrink-0">
+          
+          <!-- Suhu Zat (T) -->
+          <div class="sidafi-stat-card border-l-4 border-l-sky-500">
+            <div class="min-w-0">
+              <span class="stat-label block truncate">Suhu Zat (<span class="italic font-serif font-bold">T</span>)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="displayTemp" class="stat-value text-slate-900 dark:text-white">-10.0</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500">°C</span>
+              </div>
+            </div>
+            <div id="tempIconBox" class="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-200 dark:border-sky-800 shrink-0">
+              <i data-lucide="thermometer" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+            </div>
+          </div>
+
+          <!-- Total Kalor Diserap (Q) -->
+          <div class="sidafi-stat-card border-l-4 border-l-[#E5232B]">
+            <div class="min-w-0">
+              <span class="stat-label block truncate">Kalor (<span class="italic font-serif font-bold">Q</span>)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="displayHeatKJ" class="stat-value text-slate-900 dark:text-white">0.0</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500">kJ</span>
+              </div>
+              <span id="displayHeatJ" class="text-[9px] text-slate-400 dark:text-slate-500 font-mono block truncate">(0 Joule)</span>
+            </div>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-red-50 dark:bg-red-950/40 text-[#E5232B] flex items-center justify-center border border-red-200 dark:border-red-900/60 shrink-0">
+              <i data-lucide="flame" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+            </div>
+          </div>
+
+          <!-- Waktu Proses Simulasi (t) -->
+          <div class="sidafi-stat-card border-l-4 border-l-amber-500" title="Waktu proses simulasi berjalan">
+            <div class="min-w-0">
+              <span class="stat-label block truncate">Waktu Proses (<span class="italic font-serif font-bold">t</span>)</span>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span id="displayTime" class="stat-value text-slate-900 dark:text-white">00:00</span>
+                <span id="displayTimeSec" class="text-xs font-bold text-slate-400 dark:text-slate-500">s</span>
+              </div>
+              <span id="displayTimeSub" class="text-[9px] text-slate-400 dark:text-slate-500 font-mono block truncate">0.0 detik</span>
+            </div>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-800 shrink-0">
+              <i data-lucide="timer" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- KOTAK GRAFIK KALOR TERHADAP SUHU (Q - T) -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl p-2.5 sm:p-3 border border-slate-200 dark:border-slate-800 shadow-2xs flex flex-col justify-between gap-1.5 flex-1 min-h-0">
+          
+          <!-- Header Area Grafik + Tombol Info & Sudut Pandang -->
+          <div class="flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="line-chart" class="w-4 h-4 text-[#E5232B]"></i>
+              <h3 class="font-display font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                Grafik Kalor &ndash; Suhu (<span class="italic font-serif font-bold">Q &ndash; T</span>)
+              </h3>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <!-- Tombol Toggle Sudut Pandang Grafik -->
+              <button id="btnGraphViewToggle" onclick="toggleGraphView()" 
+                class="btn-sidafi-secondary px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300"
+                title="Beralih mode fokus titik live atau tampilan kurva penuh">
+                <i id="graphViewIcon" data-lucide="crosshair" class="w-3 h-3 text-[#E5232B]"></i>
+                <span id="graphViewModeLabel" class="hidden sm:inline">Fokus Titik</span>
+              </button>
+
+              <!-- Tombol Info Penjelasan Proses Fisika -->
+              <button id="btnProcessInfo" onclick="toggleProcessInfo()" 
+                class="btn-sidafi-secondary px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/30"
+                title="Buka / tutup status proses kalor">
+                <span id="processInfoPulse" class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <i data-lucide="info" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i>
+                <span id="processInfoBtnText">Info Proses</span>
+              </button>
+
+              <!-- Tombol Teori Ringkas -->
+              <button onclick="openModal('modalKalorLaten')" 
+                class="btn-sidafi-secondary px-2 py-0.5 text-xs"
+                title="Tabel Rumus &amp; Konstanta Fisika">
+                <i data-lucide="file-text" class="w-3 h-3 text-[#E5232B]"></i>
+                <span class="hidden sm:inline">Rumus</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KOTAK INFO PROSES FISIKA (DINAMIS & RINGKAS TANPA TEKS BERLEBIHAN) -->
+          <div id="processInfoBox" class="hidden bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs transition-all shadow-2xs shrink-0 max-h-36 overflow-y-auto">
+            <div class="flex items-center justify-between gap-2 mb-1.5 border-b border-slate-200 dark:border-slate-700 pb-1.5">
+              <div class="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs" id="processInfoTitle">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-[#E5232B] shrink-0"></i>
+                <span>Status Proses Kalor</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="processInfoBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                  Menyerap Kalor
+                </span>
+                <button onclick="toggleProcessInfo()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-700/50 btn-transition" title="Tutup Info">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Deskripsi Terstruktur Ringkas: Fase, Rumus, dan Penjelasan Fisika -->
+            <div id="processInfoText" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed space-y-1">
+              <!-- Diisi secara otomatis oleh JavaScript -->
+            </div>
+          </div>
+
+          <!-- Kanvas Grafik Kalor vs Suhu -->
+          <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-1.5 border border-slate-200 dark:border-slate-800 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+            <canvas id="graphCanvas" width="460" height="195" class="max-w-full max-h-full w-full h-auto object-contain block"></canvas>
+          </div>
+
+          <!-- Legenda Segmen Grafik Fisika (Adaptif: Pemanasan / Pendinginan) -->
+          <div class="flex flex-wrap items-center justify-between gap-1 text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 pt-0.5 px-0.5 shrink-0">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500"></span> <span id="legendAB">A-B: Es Memanas</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="legendBC">B-C: Melebur</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-600"></span> <span id="legendCD">C-D: Air Memanas</span></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <span id="legendDE">D-E: Menguap</span></span>
+            <span class="flex items-center gap-1 text-[#E5232B] font-bold"><span class="w-2 h-2 rounded-full bg-[#E5232B] animate-ping"></span> Titik Saat Ini</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TEORI KALOR LATEN & RUMUS FISIKA                   -->
+  <!-- ======================================================== -->
+  <div id="modalKalorLaten" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden modal-backdrop">
+    <div class="bg-white dark:bg-slate-900 rounded-xl max-w-lg w-full p-5 border border-slate-200 dark:border-slate-800 shadow-xl modal-panel flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-md bg-red-50 dark:bg-red-950/50 text-[#E5232B] flex items-center justify-center">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Rumus Kalor &amp; Kalor Laten</h3>
+        </div>
+        <button onclick="closeModal('modalKalorLaten')" class="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition" title="Tutup">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+        
+        <!-- Tabel Ringkas Dua Jenis Kalor -->
+        <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="p-2">Jenis Kalor</th>
+                <th class="p-2">Persamaan</th>
+                <th class="p-2">Efek pada Zat</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+              <tr>
+                <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Sensibel</td>
+                <td class="p-2 font-mono font-bold text-[#E5232B]">Q = m · c · ΔT</td>
+                <td class="p-2">Suhu zat naik / turun, wujud zat tetap.</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Laten Lebur / Beku</td>
+                <td class="p-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m · L</td>
+                <td class="p-2">Padat &harr; Cair (0°C). Melebur (serap kalor) atau Membeku (lepas kalor).</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">Kalor Laten Uap / Embun</td>
+                <td class="p-2 font-mono font-bold text-amber-600 dark:text-amber-400">Q = m · U</td>
+                <td class="p-2">Cair &harr; Gas (100°C). Menguap (serap kalor) atau Mengembun (lepas kalor).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Nilai Konstanta Fisika Standar IPA SMP -->
+        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1">
+          <span class="font-display font-bold font-sans text-xs text-slate-900 dark:text-white block mb-1">Konstanta Fisika (Tekanan 1 atm):</span>
+          <div class="flex justify-between"><span>Kalor jenis es (c<sub>es</sub>):</span><span class="font-bold">2.100 J/(kg·°C)</span></div>
+          <div class="flex justify-between"><span>Kalor jenis air (c<sub>air</sub>):</span><span class="font-bold">4.200 J/(kg·°C)</span></div>
+          <div class="flex justify-between"><span>Kalor jenis uap (c<sub>uap</sub>):</span><span class="font-bold">2.000 J/(kg·°C)</span></div>
+          <div class="flex justify-between"><span>Kalor lebur es (L):</span><span class="font-bold">336.000 J/kg</span></div>
+          <div class="flex justify-between"><span>Kalor uap air (U):</span><span class="font-bold">2.260.000 J/kg</span></div>
+        </div>
+
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeModal('modalKalorLaten')" class="btn-sidafi-primary px-4 py-1.5 text-xs">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: INFORMASI LINGKUNGAN                               -->
+  <!-- ======================================================== -->
+  <div id="modalPanduan" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden modal-backdrop">
+    <div class="bg-white dark:bg-slate-900 rounded-xl max-w-lg w-full p-5 border border-slate-200 dark:border-slate-800 shadow-xl modal-panel flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-md bg-red-50 dark:bg-red-950/50 text-[#E5232B] flex items-center justify-center">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Informasi Lingkungan</h3>
+        </div>
+        <button onclick="closeModal('modalPanduan')" class="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition" title="Tutup">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+        <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">1</span>
+          <div>
+            <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Freezer</strong>
+            Kondisi Lingkungan dengan Suhu -10°C. Pada suhu ini, Air (H<sub>2</sub>O) berada pada wujud padat atau sering disebut "Es".
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">2</span>
+          <div>
+            <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Suhu Ruang</strong>
+            Kondisi Lingkungan dengan Suhu 27°C. Pada suhu ini, Air (H<sub>2</sub>O) berada pada wujud cair. Kalor dari udara ruangan diserap secara alami oleh es sehingga es melebur menjadi air pada titik lebur 0°C.
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-[#E5232B] text-white font-bold flex items-center justify-center shrink-0 text-[10px]">3</span>
+          <div>
+            <strong class="text-slate-900 dark:text-white block text-xs mb-0.5">Kompor</strong>
+            Kondisi Lingkungan dengan Suhu 150°C. Pada kondisi ini, nyala api memberikan energi kalor tinggi sehingga air dipanaskan mencapai titik didih 100°C dan berubah wujud menjadi gas atau sering disebut "Uap Air".
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeModal('modalPanduan')" class="btn-sidafi-primary px-4 py-1.5 text-xs">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: MATERI KALOR & ANOMALI AIR                         -->
+  <!-- ======================================================== -->
+  <div id="modalMateri" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden modal-backdrop">
+    <div class="bg-white dark:bg-slate-900 rounded-xl max-w-xl w-full p-5 border border-slate-200 dark:border-slate-800 shadow-xl modal-panel flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-md bg-red-50 dark:bg-red-950/50 text-[#E5232B] flex items-center justify-center">
+            <i data-lucide="book-open" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Materi Kalor &amp; Hukum Fisika</h3>
+        </div>
+        <button onclick="closeModal('modalMateri')" class="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition" title="Tutup">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+        
+        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+          <h4 class="font-bold text-xs text-slate-900 dark:text-white">1. Hubungan Kalor dan Suhu Zat</h4>
+          <p class="leading-relaxed">
+            • <strong>Perubahan Suhu</strong>: Kalor yang diterima menaikkan energi kinetik molekul (<span class="font-mono font-bold text-[#E5232B]">Q = m·c·ΔT</span>).<br>
+            • <strong>Perubahan Wujud</strong>: Pada titik lebur (0°C) atau titik didih (100°C), suhu zat <strong>tidak berubah (konstan)</strong>. Seluruh kalor digunakan untuk memutus ikatan antarmolekul (<span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">Q = m·L</span> atau <span class="font-mono font-bold text-amber-600 dark:text-amber-400">Q = m·U</span>).
+          </p>
+        </div>
+
+        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+          <h4 class="font-bold text-xs text-slate-900 dark:text-white">2. Hukum Kekekalan Massa &amp; Anomali Air</h4>
+          <p class="leading-relaxed">
+            • <strong>Hukum Kekekalan Massa</strong>: Ketika es melebur seutuhnya menjadi air, <strong>massa zat selalu tetap sama</strong> (<span class="font-mono font-bold">m<sub>es</sub> = m<sub>air</sub></span>). Tidak ada materi yang hilang.<br>
+            • <strong>Anomali Pemuaian Air</strong>: Es memiliki struktur heksagonal berongga dengan massa jenis lebih kecil (&rho;<sub>es</sub> &asymp; 0,92 g/cm³). Saat mencair menjadi air (&rho;<sub>air</sub> &asymp; 1,0 g/cm³), struktur berongga runtuh sehingga <strong>volumenya sedikit menyusut &asymp; 8,3%</strong>. Fenomena ini menyebabkan es terapung di atas air.
+          </p>
+        </div>
+
+        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+          <h4 class="font-bold text-xs text-slate-900 dark:text-white">3. Arah Aliran Kalor (Hukum Termodinamika)</h4>
+          <p class="leading-relaxed">
+            Kalor mengalir secara spontan dari benda/lingkungan bersuhu lebih tinggi menuju benda bersuhu lebih rendah hingga tercapai kesetimbangan termal.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeModal('modalMateri')" class="btn-sidafi-primary px-4 py-1.5 text-xs">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: KUIS TANTANGAN INTERAKTIF                          -->
+  <!-- ======================================================== -->
+  <div id="modalKuis" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden modal-backdrop">
+    <div class="bg-white dark:bg-slate-900 rounded-xl max-w-xl w-full p-5 border border-slate-200 dark:border-slate-800 shadow-xl modal-panel flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-md bg-red-50 dark:bg-red-950/50 text-[#E5232B] flex items-center justify-center">
+            <i data-lucide="award" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Kuis Pemahaman Kalor</h3>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">5 Pertanyaan Konsep IPA SMP</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-[#E5232B] px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700">
+            Skor: <span id="quizScore">0</span> / 100
+          </span>
+          <button onclick="closeModal('modalKuis')" class="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 btn-transition" title="Tutup">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Container Kuis Dinamis -->
+      <div id="quizContainer" class="space-y-3"></div>
+
+      <div class="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+        <button onclick="resetQuiz()" class="text-xs font-semibold text-slate-500 hover:text-[#E5232B] btn-transition">
+          Ulangi Kuis
+        </button>
+        <button onclick="closeModal('modalKuis')" class="btn-sidafi-primary px-4 py-1.5 text-xs">
+          Selesai
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Separate JavaScript Application File -->
+  <script src="script.js" defer></script>
+</body>
+</html>
