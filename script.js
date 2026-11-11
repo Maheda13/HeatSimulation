@@ -22,7 +22,7 @@ const SUBSTANCES = {
     density: 1.0,
     tMin: -20,
     tMax: 120,
-    tBase: -10,
+    tBase: -20,
     tMelt: 0,
     tBoil: 100,
     cSolid: 2100,
@@ -194,7 +194,8 @@ const state = {
   mass: 0.1,             // Massa zat (kg) -> default 100 gram
   initialTemp: -10.0,    // Suhu awal zat (°C)
   temp: -10.0,           // Suhu zat saat ini (°C)
-  heatTotal: 0,          // Total kalor bersih diserap sejak awal (Joule)
+  curveQ: 0,             // Koordinat entalpi pada kurva termodinamika fase zat (Joule)
+  heatTotal: 0,          // Total kalor proses yang berpindah sejak awal percobaan (Joule, selalu mulai 0)
   zone: 'freezer',       // 'freezer' (-10°C), 'suhuRuang' (27°C), 'kompor' (150°C / Tanur)
   flameLevel: 2,         // Intensitas api kompor: 1 (Kecil), 2 (Sedang), 3 (Besar)
   speed: 1,              // Laju kecepatan simulasi: 1x, 2x, 5x
@@ -270,8 +271,17 @@ const i18n = {
     ],
     labelMass: 'Massa:',
     labelSpeed: 'Laju:',
+    badgeHeatAbsorbed: 'Kalor Diserap (+Q)',
+    badgeHeatReleased: 'Kalor Dilepaskan (-Q)',
+    badgeHeatEquilibrium: 'Setimbang Termal (Q Konstan)',
     statLabelTemp: 'Suhu Zat (<span class="italic font-serif font-bold">T</span>)',
     statLabelHeat: 'Kalor (<span class="italic font-serif font-bold">Q</span>)',
+    statLabelHeatAbsorbed: 'Kalor Diserap (<span class="italic font-serif font-bold">+Q</span>)',
+    statLabelHeatReleased: 'Kalor Dilepaskan (<span class="italic font-serif font-bold">-Q</span>)',
+    statLabelHeatEquilibrium: 'Kalor (<span class="italic font-serif font-bold">Q Netto = 0</span>)',
+    heatDirectionAbsorbed: 'Energi Masuk ke Zat',
+    heatDirectionReleased: 'Energi Keluar ke Lingkungan',
+    heatDirectionEquilibrium: 'Tidak Ada Kalor Mengalir',
     statLabelTime: 'Waktu Proses (<span class="italic font-serif font-bold">t</span>)',
     graphTitle: 'Grafik Kalor &ndash; Suhu (<span class="italic font-serif font-bold">Q &ndash; T</span>)',
     viewFocused: 'Fokus Titik',
@@ -325,7 +335,6 @@ const i18n = {
     lblQ3_5: 'Perubahan dari <b>gas &rarr; cair</b>:',
     lblQ3_6: 'Perubahan dari <b>gas &rarr; padat</b>:',
     txtResetMission: 'Reset',
-    txtShowMissionKeys: 'Kunci Jawaban',
     txtCopyMission: 'Salin Hasil',
     txtCheckMission: 'Periksa Jawaban',
     modalKalorLatenTitle: 'Rumus Kalor &amp; Kalor Laten',
@@ -474,8 +483,17 @@ const i18n = {
     ],
     labelMass: 'Mass:',
     labelSpeed: 'Speed:',
+    badgeHeatAbsorbed: 'Heat Absorbed (+Q)',
+    badgeHeatReleased: 'Heat Released (-Q)',
+    badgeHeatEquilibrium: 'Thermal Equilibrium',
     statLabelTemp: 'Temperature (<span class="italic font-serif font-bold">T</span>)',
     statLabelHeat: 'Heat (<span class="italic font-serif font-bold">Q</span>)',
+    statLabelHeatAbsorbed: 'Heat Absorbed (<span class="italic font-serif font-bold">+Q</span>)',
+    statLabelHeatReleased: 'Heat Released (<span class="italic font-serif font-bold">-Q</span>)',
+    statLabelHeatEquilibrium: 'Heat (<span class="italic font-serif font-bold">Net Q = 0</span>)',
+    heatDirectionAbsorbed: 'Energy Entering Substance',
+    heatDirectionReleased: 'Energy Escaping to Ambient',
+    heatDirectionEquilibrium: 'No Net Heat Transfer',
     statLabelTime: 'Elapsed Time (<span class="italic font-serif font-bold">t</span>)',
     graphTitle: 'Heat &ndash; Temperature Graph (<span class="italic font-serif font-bold">Q &ndash; T</span>)',
     viewFocused: 'Point Focus',
@@ -529,7 +547,6 @@ const i18n = {
     lblQ3_5: 'Phase change from <b>gas &rarr; liquid</b> is called:',
     lblQ3_6: 'Phase change from <b>gas &rarr; solid</b> is called:',
     txtResetMission: 'Reset',
-    txtShowMissionKeys: 'Answer Key',
     txtCopyMission: 'Copy Summary',
     txtCheckMission: 'Check Answers',
     modalKalorLatenTitle: 'Heat Formulas &amp; Latent Heat',
@@ -907,12 +924,6 @@ function applyLanguage() {
 
   const txtResetMission = document.getElementById('txtResetMission');
   if (txtResetMission) txtResetMission.textContent = t.txtResetMission;
-  const txtShowMissionKeys = document.getElementById('txtShowMissionKeys');
-  if (txtShowMissionKeys) {
-    txtShowMissionKeys.textContent = missionKeysVisible
-      ? (lang === 'en' ? 'Hide Keys' : 'Sembunyikan Kunci')
-      : t.txtShowMissionKeys;
-  }
   const txtCopyMission = document.getElementById('txtCopyMission');
   if (txtCopyMission) txtCopyMission.textContent = t.txtCopyMission;
   const txtCheckMission = document.getElementById('txtCheckMission');
@@ -1116,40 +1127,40 @@ function getInitialThermalState(initT, mass) {
     // Air (H₂O) & Mentega (Butter)
     if (initT < sub.tMelt) {
       const q = m * sub.cSolid * (initT - tBase);
-      return { temp: initT, heatTotal: q, meltProgress: 0, vaporProgress: 0 };
+      return { temp: initT, curveQ: q, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else if (initT === sub.tMelt) {
-      return { temp: sub.tMelt, heatTotal: landmarks.q1, meltProgress: 0, vaporProgress: 0 };
+      return { temp: sub.tMelt, curveQ: landmarks.q1, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else if (initT > sub.tMelt && initT < sub.tBoil) {
       const q = landmarks.q2 + m * sub.cLiquid * (initT - sub.tMelt);
-      return { temp: initT, heatTotal: q, meltProgress: 1.0, vaporProgress: 0.0 };
+      return { temp: initT, curveQ: q, heatTotal: 0, meltProgress: 1.0, vaporProgress: 0.0 };
     } else if (initT === sub.tBoil) {
-      return { temp: sub.tBoil, heatTotal: landmarks.q3, meltProgress: 1.0, vaporProgress: 0.0 };
+      return { temp: sub.tBoil, curveQ: landmarks.q3, heatTotal: 0, meltProgress: 1.0, vaporProgress: 0.0 };
     } else {
       const q = landmarks.q4 + m * sub.cGas * (initT - sub.tBoil);
-      return { temp: Math.min(sub.tMax, initT), heatTotal: Math.min(landmarks.q5, q), meltProgress: 1.0, vaporProgress: 1.0 };
+      return { temp: Math.min(sub.tMax, initT), curveQ: Math.min(landmarks.q5, q), heatTotal: 0, meltProgress: 1.0, vaporProgress: 1.0 };
     }
   } else if (sub.type === 'metal_incandescence') {
     // Besi (Fe)
     if (initT < sub.tMelt) {
       const q = m * sub.cSolid * (initT - tBase);
-      return { temp: initT, heatTotal: q, meltProgress: 0, vaporProgress: 0 };
+      return { temp: initT, curveQ: q, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else if (initT === sub.tMelt) {
-      return { temp: sub.tMelt, heatTotal: landmarks.q1, meltProgress: 0, vaporProgress: 0 };
+      return { temp: sub.tMelt, curveQ: landmarks.q1, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else {
       const q = landmarks.q2 + m * sub.cLiquid * (initT - sub.tMelt);
-      return { temp: Math.min(sub.tMax, initT), heatTotal: Math.min(landmarks.q5, q), meltProgress: 1.0, vaporProgress: 0 };
+      return { temp: Math.min(sub.tMax, initT), curveQ: Math.min(landmarks.q5, q), heatTotal: 0, meltProgress: 1.0, vaporProgress: 0 };
     }
   } else {
     // Fallback Sublimasi
     const tSub = sub.tSublim || 80;
     if (initT < tSub) {
       const q = m * sub.cSolid * (initT - tBase);
-      return { temp: initT, heatTotal: q, meltProgress: 0, vaporProgress: 0 };
+      return { temp: initT, curveQ: q, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else if (initT === tSub) {
-      return { temp: tSub, heatTotal: landmarks.q1, meltProgress: 0, vaporProgress: 0 };
+      return { temp: tSub, curveQ: landmarks.q1, heatTotal: 0, meltProgress: 0, vaporProgress: 0 };
     } else {
       const q = landmarks.q2 + m * sub.cGas * (initT - tSub);
-      return { temp: Math.min(sub.tMax, initT), heatTotal: Math.min(landmarks.q5, q), meltProgress: 1.0, vaporProgress: 1.0 };
+      return { temp: Math.min(sub.tMax, initT), curveQ: Math.min(landmarks.q5, q), heatTotal: 0, meltProgress: 1.0, vaporProgress: 1.0 };
     }
   }
 }
@@ -1264,6 +1275,7 @@ function getMassAndVolume() {
 // --- SISTEM INFORMASI PROSES KALOR & KALOR LATEN DINAMIS ---
 let isProcessInfoOpen = false;
 let lastProcessStageKey = '';
+let lastHeatFlowMode = '';
 
 function toggleProcessInfo() {
   sound.playClick();
@@ -1291,7 +1303,7 @@ function isCoolingProcess() {
   if (hr < -0.01) return true;
   if (hr > 0.01) return false;
   // Jika dalam kesetimbangan atau jeda saat suhu lebih tinggi dari lingkungan
-  if (state.zone === 'freezer' && (state.temp > -9.95 || state.heatTotal > 0.05)) return true;
+  if (state.zone === 'freezer' && state.temp > -9.95) return true;
   if (state.zone === 'suhuRuang' && state.temp > 27.2) return true;
   return false;
 }
@@ -1299,7 +1311,7 @@ function isCoolingProcess() {
 function getProcessInfoData() {
   const landmarks = getLandmarks(state.mass, state.initialTemp);
   const sub = landmarks.sub;
-  const Q = state.heatTotal;
+  const Q = state.curveQ;
   const T = Math.abs(state.temp) < 0.05 ? 0.0 : state.temp;
   const zone = state.zone;
   const massG = Math.round(state.mass * 1000);
@@ -2236,7 +2248,17 @@ function getProcessInfoData() {
 function updateProcessInfo() {
   if (!isProcessInfoOpen) return;
   const data = getProcessInfoData();
-  const stageKey = `${state.zone}_${data.title}_${data.badge}`;
+  const sub = SUBSTANCES[state.substance] || SUBSTANCES.air;
+  const hr = getHeatRate(state.temp, state.zone, state.flameLevel);
+  const isAbsorbing = hr > 0.05 || (state.zone === 'kompor' && state.temp < sub.tMax);
+  const isReleasing = hr < -0.05 || (state.zone === 'freezer' && state.temp > -9.95);
+
+  const isMelting = !isReleasing && state.meltProgress > 0 && state.meltProgress < 1;
+  const isBoiling = !isReleasing && ((state.vaporProgress > 0 && state.vaporProgress < 1) || (sub.id === 'mentega' && state.temp >= 110));
+  const isFreezing = isReleasing && state.meltProgress > 0 && state.meltProgress < 1;
+  const isCondensing = isReleasing && state.vaporProgress > 0 && state.vaporProgress < 1;
+
+  const stageKey = `${state.zone}_${data.title}_${data.badge}_${isAbsorbing ? 'abs' : (isReleasing ? 'rel' : 'eq')}_${isMelting}_${isBoiling}_${isFreezing}_${isCondensing}`;
 
   const titleEl = document.getElementById('processInfoTitle');
   const badgeEl = document.getElementById('processInfoBadge');
@@ -2250,7 +2272,50 @@ function updateProcessInfo() {
     badgeEl.className = `text-[10px] font-bold px-2 py-0.5 rounded border ${data.badgeClass}`;
   }
   if (textEl) {
-    textEl.innerHTML = data.text;
+    const classificationHtml = `
+      ${data.text}
+      <div class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+        <div class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">
+          ${currentLang === 'en' ? '6 Phase Changes Classification:' : 'Klasifikasi 6 Perubahan Wujud Zat:'}
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+          <!-- Kolom 1: Menyerap Kalor (+Q) -->
+          <div class="p-1.5 rounded-md ${isAbsorbing ? 'bg-red-50/90 dark:bg-red-950/40 border border-red-300 dark:border-red-800 ring-1 ring-red-400' : 'bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70'}">
+            <div class="flex items-center gap-1 font-bold text-red-600 dark:text-red-400 mb-1">
+              <i data-lucide="flame" class="w-3 h-3 text-[#E5232B]"></i>
+              <span>${currentLang === 'en' ? 'ABSORBING (+Q)' : 'MENYERAP KALOR (+Q)'}</span>
+            </div>
+            <ul class="space-y-0.5 text-[9px] text-slate-700 dark:text-slate-300">
+              <li class="${isMelting ? 'font-bold text-[#E5232B] dark:text-red-400' : ''}">
+                ${isMelting ? '▶ ' : '• '}<strong>${currentLang === 'en' ? 'Melting' : 'Melebur'}</strong> (Padat &rarr; Cair)
+              </li>
+              <li class="${isBoiling ? 'font-bold text-[#E5232B] dark:text-red-400' : ''}">
+                ${isBoiling ? '▶ ' : '• '}<strong>${currentLang === 'en' ? 'Vaporizing' : 'Menguap'}</strong> (Cair &rarr; Gas)
+              </li>
+              <li>• <strong>${currentLang === 'en' ? 'Sublimating' : 'Menyublim'}</strong> (Padat &rarr; Gas)</li>
+            </ul>
+          </div>
+
+          <!-- Kolom 2: Melepas Kalor (-Q) -->
+          <div class="p-1.5 rounded-md ${isReleasing ? 'bg-sky-50/90 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 ring-1 ring-sky-400' : 'bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70'}">
+            <div class="flex items-center gap-1 font-bold text-sky-600 dark:text-sky-400 mb-1">
+              <i data-lucide="snowflake" class="w-3 h-3 text-sky-500"></i>
+              <span>${currentLang === 'en' ? 'RELEASING (-Q)' : 'MELEPAS KALOR (-Q)'}</span>
+            </div>
+            <ul class="space-y-0.5 text-[9px] text-slate-700 dark:text-slate-300">
+              <li class="${isFreezing ? 'font-bold text-sky-600 dark:text-sky-400' : ''}">
+                ${isFreezing ? '▶ ' : '• '}<strong>${currentLang === 'en' ? 'Freezing' : 'Membeku'}</strong> (Cair &rarr; Padat)
+              </li>
+              <li class="${isCondensing ? 'font-bold text-sky-600 dark:text-sky-400' : ''}">
+                ${isCondensing ? '▶ ' : '• '}<strong>${currentLang === 'en' ? 'Condensing' : 'Mengembun'}</strong> (Gas &rarr; Cair)
+              </li>
+              <li>• <strong>${currentLang === 'en' ? 'Deposition' : 'Mengkristal'}</strong> (Gas &rarr; Padat)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    `;
+    textEl.innerHTML = classificationHtml;
   }
 
   if (stageKey !== lastProcessStageKey) {
@@ -2325,6 +2390,7 @@ function setSpeed(s) {
     }
   });
 }
+
 
 function updateTempPresetsUI() {
   const sub = SUBSTANCES[state.substance] || SUBSTANCES.air;
@@ -2549,7 +2615,7 @@ function onInitialTempChange(val) {
   const num = parseFloat(val);
   if (!isNaN(num)) {
     state.initialTemp = num;
-    resetSimulation();
+    resetSimulation(true);
   }
 }
 
@@ -2558,7 +2624,7 @@ function onCustomTempInput(val) {}
 function onMassChange(val) {
   sound.playClick();
   state.mass = parseFloat(val);
-  resetSimulation();
+  resetSimulation(true);
 }
 
 function togglePlayPause() {
@@ -2586,11 +2652,16 @@ function togglePlayPause() {
   lucide.createIcons();
 }
 
-function resetSimulation() {
+function resetSimulation(keepZone = false) {
   sound.playClick();
+  const sub = SUBSTANCES[state.substance] || SUBSTANCES.air;
+  if (!keepZone) {
+    state.initialTemp = sub.defaultTemp;
+  }
   const init = getInitialThermalState(state.initialTemp, state.mass);
   state.temp = init.temp;
-  state.heatTotal = init.heatTotal;
+  state.curveQ = init.curveQ;
+  state.heatTotal = 0;
   state.simTime = 0;
   state.meltProgress = init.meltProgress;
   state.vaporProgress = init.vaporProgress;
@@ -2606,13 +2677,15 @@ function resetSimulation() {
   btnPlayPause.classList.add('bg-[#E5232B]', 'hover:bg-[#BF1219]');
   lucide.createIcons();
 
-  // Atur zona lingkungan awal yang sesuai dengan suhu awal
-  if (state.initialTemp <= 0) {
-    setZone('freezer');
-  } else if (state.initialTemp <= 40) {
-    setZone('suhuRuang');
-  } else {
-    setZone('kompor');
+  // Atur zona lingkungan awal hanya jika tidak diminta mempertahankan zona terpilih
+  if (!keepZone) {
+    if (state.initialTemp <= 0) {
+      setZone('freezer');
+    } else if (state.initialTemp <= 40) {
+      setZone('suhuRuang');
+    } else {
+      setZone('kompor');
+    }
   }
 
   // Sinkronisasi dropdown pilihan suhu
@@ -2658,9 +2731,22 @@ function updatePhysics(dt) {
 
   state.simTime += effectiveDt;
 
-  // Kalor total dibatasi maksimal persis pada landmarks.q5 (Uap / Cair / Gas Maksimal)
-  state.heatTotal = Math.max(0, Math.min(landmarks.q5, state.heatTotal + dQ));
-  const Q = state.heatTotal;
+  // Bersihkan bubble & uap saat proses pendinginan agar tidak tampil saat suhu turun dari >100°C
+  if (heatRate < -0.01) {
+    state.bubbles = [];
+    state.steamParticles = [];
+  }
+
+  // Akumulasi kalor proses (energi yang berpindah sejak awal percobaan, selalu mulai dari 0)
+  if (heatRate > 0.01) {
+    state.heatTotal += dQ;
+  } else if (heatRate < -0.01) {
+    state.heatTotal += Math.abs(dQ);
+  }
+
+  // Posisi pada kurva termodinamika fase zat
+  state.curveQ = Math.max(0, Math.min(landmarks.q5, state.curveQ + dQ));
+  const Q = state.curveQ;
   const m = state.mass;
 
   if (sub.type === 'melt_boil') {
@@ -2681,14 +2767,14 @@ function updatePhysics(dt) {
       state.temp = sub.tBoil;
       state.meltProgress = 1.0;
       state.vaporProgress = (Q - landmarks.q3) / (landmarks.q4 - landmarks.q3);
-      if (Math.random() < 0.25) sound.playBoilBubble();
+      if (!isCoolingProcess() && Math.random() < 0.25) sound.playBoilBubble();
     } else {
       state.temp = Math.min(sub.tMax, sub.tBoil + (Q - landmarks.q4) / (m * sub.cGas));
       state.meltProgress = 1.0;
       state.vaporProgress = 1.0;
       if (state.temp >= sub.tMax) {
         state.temp = sub.tMax;
-        state.heatTotal = landmarks.q5;
+        state.curveQ = landmarks.q5;
       }
     }
   } else if (sub.type === 'metal_incandescence') {
@@ -2707,7 +2793,7 @@ function updatePhysics(dt) {
       state.vaporProgress = 0;
       if (state.temp >= sub.tMax) {
         state.temp = sub.tMax;
-        state.heatTotal = landmarks.q5;
+        state.curveQ = landmarks.q5;
       }
     }
   } else {
@@ -2726,7 +2812,7 @@ function updatePhysics(dt) {
       state.vaporProgress = 1.0;
       if (state.temp >= sub.tMax) {
         state.temp = sub.tMax;
-        state.heatTotal = landmarks.q5;
+        state.curveQ = landmarks.q5;
       }
     }
   }
@@ -2734,13 +2820,26 @@ function updatePhysics(dt) {
   // Batas pendinginan freezer (-10°C)
   if (state.zone === 'freezer' && state.temp <= -10.0 && heatRate <= 0) {
     const qFreezerLimit = landmarks.tBase === -10 ? 0 : (m * sub.cSolid * (-10 - landmarks.tBase));
-    if (state.heatTotal <= qFreezerLimit) {
-      state.heatTotal = qFreezerLimit;
+    if (state.curveQ <= qFreezerLimit) {
+      state.curveQ = qFreezerLimit;
       state.temp = -10.0;
+    }
+  } else if (state.zone === 'suhuRuang') {
+    // Stabilisasi pada suhu ruang 27°C
+    if (Math.abs(state.temp - 27.0) < 0.2 && Math.abs(heatRate) < 15) {
+      state.temp = 27.0;
+      if (sub.type === 'melt_boil') {
+        if (27.0 < sub.tMelt) {
+          state.curveQ = m * sub.cSolid * (27.0 - landmarks.tBase);
+        } else {
+          state.curveQ = landmarks.q2 + m * sub.cLiquid * (27.0 - sub.tMelt);
+        }
+      } else {
+        state.curveQ = m * sub.cSolid * (27.0 - landmarks.tBase);
+      }
     }
   }
 }
-
 
 // --- HELPER WARNA PIJAR TERMAL BESI (BLACKBODY RADIATION) ---
 function getIronThermalColors(temp) {
@@ -3168,7 +3267,7 @@ function renderBeaker() {
     }
 
     // C. Gelembung Letupan Mendidih / Sizzling Butter Bubbles & Desisan Uap
-    if (state.temp >= 90 && state.zone === 'kompor') {
+    if (state.temp >= 90 && state.zone === 'kompor' && !isCoolingProcess()) {
       if (Math.random() < 0.4) {
         state.bubbles.push({
           x: bx + 16 + Math.random() * (bw - 32),
@@ -3289,7 +3388,7 @@ function renderBeaker() {
     }
 
     // Gelembung Mendidih
-    if (state.temp >= 98 && state.vaporProgress < 1 && state.zone === 'kompor') {
+    if (state.temp >= 98 && state.vaporProgress < 1 && state.zone === 'kompor' && !isCoolingProcess()) {
       if (Math.random() < 0.6) {
         state.bubbles.push({
           x: bx + 14 + Math.random() * (bw - 28),
@@ -3448,6 +3547,146 @@ function renderBeaker() {
     }
     bCtx.restore();
   }
+
+  // ========================================================
+  // ANIMASI TERMAL: ARAH ALIRAN KALOR (MENYERAP VS MELEPAS)
+  // ========================================================
+  const hr = getHeatRate(state.temp, state.zone, state.flameLevel);
+  const isAbsorbing = hr > 0.05 || (state.zone === 'kompor' && state.temp < sub.tMax);
+  const isReleasing = hr < -0.05 || (state.zone === 'freezer' && state.temp > -9.95);
+  const animT = performance.now() * 0.003;
+
+  if (isAbsorbing) {
+    // 1. Panah Kalor Masuk (+Q): Gelombang energi hangat masuk dari bawah bejana ke zat
+    bCtx.save();
+    const rayCount = 4;
+    const startBaseX = sub.id === 'besi' ? w / 2 - 36 : w / 2 - 45;
+    const raySpacing = sub.id === 'besi' ? 24 : 30;
+
+    for (let r = 0; r < rayCount; r++) {
+      const rx = startBaseX + r * raySpacing;
+      const progress = ((animT * 1.6 + r * 0.28) % 1.0);
+      const curY = 166 - progress * 30;
+      const alpha = Math.sin(progress * Math.PI) * 0.85;
+
+      bCtx.strokeStyle = `rgba(239, 68, 68, ${alpha})`;
+      bCtx.fillStyle = `rgba(245, 158, 11, ${alpha})`;
+      bCtx.lineWidth = 2.2;
+      bCtx.lineCap = 'round';
+      bCtx.beginPath();
+      bCtx.moveTo(rx, curY + 12);
+      bCtx.lineTo(rx, curY);
+      bCtx.stroke();
+
+      // Kepala Panah Mengarah ke Atas (Masuk ke wadah)
+      bCtx.beginPath();
+      bCtx.moveTo(rx - 3.5, curY + 4);
+      bCtx.lineTo(rx, curY - 2);
+      bCtx.lineTo(rx + 3.5, curY + 4);
+      bCtx.closePath();
+      bCtx.fill();
+    }
+
+    // Label Mini Canvas Pill: +Q Kalor Diserap
+    const pillText = currentLang === 'en' ? '▲ +Q Heat Absorbed' : '▲ +Q Kalor Diserap';
+    bCtx.font = 'bold 9px "Plus Jakarta Sans", sans-serif';
+    const pW = bCtx.measureText(pillText).width + 12;
+    const pX = w - pW - 6;
+    const pY = 6;
+    bCtx.fillStyle = isDark ? 'rgba(69, 10, 10, 0.85)' : 'rgba(254, 242, 242, 0.9)';
+    bCtx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.roundRect(pX, pY, pW, 16, 4);
+    bCtx.fill();
+    bCtx.stroke();
+    bCtx.fillStyle = '#ef4444';
+    bCtx.textAlign = 'left';
+    bCtx.fillText(pillText, pX + 6, pY + 11.5);
+    bCtx.restore();
+
+  } else if (isReleasing) {
+    // 2. Panah Kalor Dilepas (-Q): Gelombang radiasi termal dingin keluar menyebar ke udara
+    bCtx.save();
+    const rayCount = 4;
+    const startBaseX = sub.id === 'besi' ? w / 2 - 36 : w / 2 - 45;
+    const raySpacing = sub.id === 'besi' ? 24 : 30;
+
+    for (let r = 0; r < rayCount; r++) {
+      const rx = startBaseX + r * raySpacing;
+      const progress = ((animT * 1.3 + r * 0.25) % 1.0);
+      const topOriginY = sub.id === 'besi' ? 85 : 40;
+      const curY = topOriginY - progress * 26;
+      const spreadX = (r - 1.5) * 6 * progress;
+      const alpha = Math.sin(progress * Math.PI) * 0.85;
+
+      bCtx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
+      bCtx.fillStyle = `rgba(14, 165, 233, ${alpha})`;
+      bCtx.lineWidth = 2.0;
+      bCtx.lineCap = 'round';
+      bCtx.beginPath();
+      bCtx.moveTo(rx, curY + 12);
+      bCtx.lineTo(rx + spreadX, curY);
+      bCtx.stroke();
+
+      // Kepala Panah Keluar
+      const tipX = rx + spreadX;
+      bCtx.beginPath();
+      bCtx.moveTo(tipX - 3.5, curY + 4);
+      bCtx.lineTo(tipX, curY - 2);
+      bCtx.lineTo(tipX + 3.5, curY + 4);
+      bCtx.closePath();
+      bCtx.fill();
+    }
+
+    // Pendaran Butiran Es Dingin
+    for (let f = 0; f < 3; f++) {
+      const fx = (w / 2 - 45) + ((animT * 40 + f * 35) % 90);
+      const fy = 50 + Math.sin(animT * 2 + f) * 16;
+      bCtx.fillStyle = isDark ? 'rgba(186, 230, 253, 0.7)' : 'rgba(56, 189, 248, 0.75)';
+      bCtx.beginPath();
+      bCtx.arc(fx, fy, 1.2, 0, Math.PI * 2);
+      bCtx.fill();
+    }
+
+    // Label Mini Canvas Pill: -Q Kalor Dilepas
+    const pillText = currentLang === 'en' ? '▼ -Q Heat Released' : '▼ -Q Kalor Dilepaskan';
+    bCtx.font = 'bold 9px "Plus Jakarta Sans", sans-serif';
+    const pW = bCtx.measureText(pillText).width + 12;
+    const pX = w - pW - 6;
+    const pY = 6;
+    bCtx.fillStyle = isDark ? 'rgba(8, 47, 73, 0.85)' : 'rgba(240, 249, 255, 0.9)';
+    bCtx.strokeStyle = 'rgba(14, 165, 233, 0.7)';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.roundRect(pX, pY, pW, 16, 4);
+    bCtx.fill();
+    bCtx.stroke();
+    bCtx.fillStyle = '#0284c7';
+    bCtx.textAlign = 'left';
+    bCtx.fillText(pillText, pX + 6, pY + 11.5);
+    bCtx.restore();
+
+  } else {
+    // 3. Setimbang Termal: Net Q = 0
+    bCtx.save();
+    const pillText = currentLang === 'en' ? '⚖️ Net Q = 0 (Equilibrium)' : '⚖️ Q Netto = 0 (Setimbang)';
+    bCtx.font = 'bold 8.5px "Plus Jakarta Sans", sans-serif';
+    const pW = bCtx.measureText(pillText).width + 10;
+    const pX = w - pW - 6;
+    const pY = 6;
+    bCtx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(248, 250, 252, 0.9)';
+    bCtx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+    bCtx.lineWidth = 1;
+    bCtx.beginPath();
+    bCtx.roundRect(pX, pY, pW, 15, 4);
+    bCtx.fill();
+    bCtx.stroke();
+    bCtx.fillStyle = isDark ? '#cbd5e1' : '#64748b';
+    bCtx.textAlign = 'left';
+    bCtx.fillText(pillText, pX + 5, pY + 11);
+    bCtx.restore();
+  }
 }
 
 // --- RENDER KANVAS: MIKROSKOPIS MOLEKUL PARTIKEL (MULTI-ZAT) ---
@@ -3578,43 +3817,43 @@ function renderMolecules() {
 
     if (currentLang === 'en') {
       if (isSolid) {
-        descEl.textContent = 'Solid: Molecules vibrate orderly in place';
+        descEl.textContent = 'Solid: Molecules vibrate orderly in crystal lattice';
       } else if (isMelting) {
         descEl.textContent = isCooling
-          ? 'Freezing: Molecules lock together into ice crystal lattice'
-          : 'Melting: Molecules begin breaking loose and flowing';
+          ? 'Freezing (Heat Released): Molecules slow down & lock into ice crystal'
+          : 'Melting (Heat Absorbed): Molecules gain kinetic energy & loosen';
       } else if (isLiquid) {
         descEl.textContent = isCooling
-          ? 'Liquid: Molecular kinetic energy decreases while cooling'
-          : 'Liquid: Molecules flow freely close together';
+          ? 'Liquid (Heat Released): Molecular kinetic energy drops & slows'
+          : 'Liquid (Heat Absorbed): Molecules move faster & glide freely';
       } else if (isBoiling) {
         descEl.textContent = isCooling
-          ? 'Condensing: Steam molecules recondense into liquid droplets'
-          : 'Boiling: High-energy molecules escape rapidly as steam';
+          ? 'Condensing (Heat Released): Steam molecules release heat & condense into droplets'
+          : 'Boiling (Heat Absorbed): High-energy molecules break bonds & escape as steam';
       } else {
         descEl.textContent = isCooling
-          ? 'Gas: Steam loses heat and contracts'
-          : 'Gas: Molecules move freely and rapidly at random';
+          ? 'Gas (Heat Released): Steam cools down and contracts'
+          : 'Gas (Heat Absorbed): Molecules move rapidly and far apart';
       }
     } else {
       if (isSolid) {
-        descEl.textContent = 'Padat: Molekul bergetar teratur di tempat';
+        descEl.textContent = 'Padat: Molekul bergetar teratur di tempat kisi kristal';
       } else if (isMelting) {
         descEl.textContent = isCooling
-          ? 'Membeku: Molekul merapat & terkunci membentuk kristal es'
-          : 'Melebur: Sebagian molekul mulai lepas & mengalir';
+          ? 'Membeku (Lepas Kalor): Molekul melambat & merapat terkunci jadi es'
+          : 'Melebur (Serap Kalor): Molekul bergerak makin lincah & merenggang';
       } else if (isLiquid) {
         descEl.textContent = isCooling
-          ? 'Cair: Energi kinetik molekul menurun saat mendingin'
-          : 'Cair: Molekul bebas mengalir berdekatan';
+          ? 'Cair (Lepas Kalor): Gerakan molekul melambat saat melepas kalor'
+          : 'Cair (Serap Kalor): Molekul menyerap energi dan bergerak semakin cepat';
       } else if (isBoiling) {
         descEl.textContent = isCooling
-          ? 'Mengembun: Molekul uap merapat kembali jadi tetesan cairan'
-          : 'Mendidih: Molekul melesat lepas jadi uap';
+          ? 'Mengembun (Lepas Kalor): Uap melepas kalor & merapat jadi tetesan air'
+          : 'Menguap (Serap Kalor): Molekul sangat lincah memutus ikatan jadi uap';
       } else {
         descEl.textContent = isCooling
-          ? 'Gas: Uap melepaskan kalor & merapat'
-          : 'Gas: Molekul bergerak acak & bebas';
+          ? 'Gas (Lepas Kalor): Uap mendingin dan merapat'
+          : 'Gas (Serap Kalor): Molekul bergerak bebas, cepat & berjarak renggang';
       }
     }
 
@@ -3674,7 +3913,7 @@ function renderGraph() {
   const sub = SUBSTANCES[state.substance] || SUBSTANCES.air;
 
   const landmarks = getLandmarks(state.mass, state.initialTemp);
-  const curQ = Math.max(0, Math.min(landmarks.q5, state.heatTotal));
+  const curQ = Math.max(0, Math.min(landmarks.q5, state.curveQ));
   const curT = Math.max(landmarks.tBase, Math.min(sub.tMax, state.temp));
 
   // Pemetaan Landmark Berdasarkan Jenis Zat
@@ -3934,7 +4173,7 @@ function renderGraph() {
     gCtx.fill();
 
     // Floating HUD Tag di atas retikel tengah
-    const hudText = `T = ${curT.toFixed(sub.type === 'metal_incandescence' ? 0 : 1)}°C | Q = ${(curQ / 1000).toFixed(1)} kJ`;
+    const hudText = `T = ${curT.toFixed(sub.type === 'metal_incandescence' ? 0 : 1)}°C | Q = ${(state.heatTotal / 1000).toFixed(1)} kJ`;
     gCtx.font = 'bold 9px "Plus Jakarta Sans", sans-serif';
     const textW = gCtx.measureText(hudText).width;
     const pillW = textW + 14;
@@ -4118,7 +4357,7 @@ function updateUI() {
   const sub = SUBSTANCES[state.substance] || SUBSTANCES.air;
   const isCooling = isCoolingProcess();
   const landmarks = getLandmarks(state.mass, state.initialTemp);
-  const Q = state.heatTotal;
+  const Q = state.curveQ;
 
   const displayT = Math.abs(state.temp) < 0.05 ? 0.0 : state.temp;
   displayTemp.textContent = sub.type === 'metal_incandescence' ? displayT.toFixed(0) : displayT.toFixed(1);
@@ -4129,18 +4368,83 @@ function updateUI() {
   const locale = currentLang === 'en' ? 'en-US' : 'id-ID';
   displayHeatJ.textContent = `(${Math.round(state.heatTotal).toLocaleString(locale)} ${unitJoule})`;
 
+  // 1. Deteksi Arah Aliran Kalor (Menyerap Kalor vs Melepas Kalor vs Setimbang)
+  const hr = getHeatRate(state.temp, state.zone, state.flameLevel);
+  const isAbsorbing = hr > 0.05 || (state.zone === 'kompor' && state.temp < sub.tMax);
+  const isReleasing = hr < -0.05 || (state.zone === 'freezer' && state.temp > -9.95);
+  const curHeatMode = isAbsorbing ? 'abs' : (isReleasing ? 'rel' : 'eq');
+
+  // 2. Update Badge & Ikon hanya saat mode aliran kalor berubah
+  const statCardHeat = document.getElementById('statCardHeat');
+  const statLabelHeat = document.getElementById('statLabelHeat');
+  const displayHeatDirection = document.getElementById('displayHeatDirection');
+  const heatIconBox = document.getElementById('heatIconBox');
+  const badgeHeatFlow = document.getElementById('badgeHeatFlow');
+
+  if (curHeatMode !== lastHeatFlowMode) {
+    lastHeatFlowMode = curHeatMode;
+
+    if (badgeHeatFlow) {
+      if (isAbsorbing) {
+        badgeHeatFlow.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-[#E5232B] dark:text-red-400 border border-red-300 dark:border-red-900/60 shadow-2xs';
+        badgeHeatFlow.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[#E5232B] animate-pulse"></span><i data-lucide="flame" class="w-3 h-3 text-[#E5232B]"></i><span id="badgeHeatFlowText">${currentLang === 'en' ? 'Heat Absorbed (+Q)' : 'Kalor Diserap (+Q)'}</span>`;
+      } else if (isReleasing) {
+        badgeHeatFlow.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-800 shadow-2xs';
+        badgeHeatFlow.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span><i data-lucide="snowflake" class="w-3 h-3 text-sky-500"></i><span id="badgeHeatFlowText">${currentLang === 'en' ? 'Heat Released (-Q)' : 'Kalor Dilepaskan (-Q)'}</span>`;
+      } else {
+        badgeHeatFlow.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-2xs';
+        badgeHeatFlow.innerHTML = `<i data-lucide="scale" class="w-3 h-3 text-slate-500"></i><span id="badgeHeatFlowText">${currentLang === 'en' ? 'Thermal Equilibrium' : 'Setimbang Termal'}</span>`;
+      }
+    }
+
+    if (heatIconBox) {
+      if (isAbsorbing) {
+        heatIconBox.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-red-50 dark:bg-red-950/40 text-[#E5232B] flex items-center justify-center border border-red-200 dark:border-red-900/60 shrink-0';
+        heatIconBox.innerHTML = '<i data-lucide="flame" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>';
+      } else if (isReleasing) {
+        heatIconBox.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-200 dark:border-sky-800 shrink-0';
+        heatIconBox.innerHTML = '<i data-lucide="snowflake" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>';
+      } else {
+        heatIconBox.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0';
+        heatIconBox.innerHTML = '<i data-lucide="scale" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>';
+      }
+    }
+
+    lucide.createIcons();
+  }
+
+  // 3. Update Teks & Warna Stat Card Telemetri Kalor
+  if (statCardHeat && statLabelHeat && displayHeatDirection) {
+    if (isAbsorbing) {
+      statCardHeat.className = 'sidafi-stat-card border-l-4 border-l-[#E5232B]';
+      statLabelHeat.innerHTML = currentLang === 'en' ? 'Heat Absorbed (<span class="italic font-serif font-bold">+Q</span>)' : 'Kalor Diserap (<span class="italic font-serif font-bold">+Q</span>)';
+      displayHeatDirection.className = 'text-[9px] font-bold text-[#E5232B] dark:text-red-400 block truncate';
+      displayHeatDirection.textContent = currentLang === 'en' ? '▲ Energy enters substance' : '▲ Energi masuk ke zat';
+    } else if (isReleasing) {
+      statCardHeat.className = 'sidafi-stat-card border-l-4 border-l-sky-500';
+      statLabelHeat.innerHTML = currentLang === 'en' ? 'Heat Released (<span class="italic font-serif font-bold">-Q</span>)' : 'Kalor Dilepaskan (<span class="italic font-serif font-bold">-Q</span>)';
+      displayHeatDirection.className = 'text-[9px] font-bold text-sky-600 dark:text-sky-400 block truncate';
+      displayHeatDirection.textContent = currentLang === 'en' ? '▼ Energy escapes to ambient' : '▼ Energi keluar ke lingkungan';
+    } else {
+      statCardHeat.className = 'sidafi-stat-card border-l-4 border-l-slate-400';
+      statLabelHeat.innerHTML = currentLang === 'en' ? 'Heat (<span class="italic font-serif font-bold">Net Q = 0</span>)' : 'Kalor (<span class="italic font-serif font-bold">Q Netto = 0</span>)';
+      displayHeatDirection.className = 'text-[9px] font-bold text-slate-500 dark:text-slate-400 block truncate';
+      displayHeatDirection.textContent = currentLang === 'en' ? '• Equal to ambient (ΔT = 0)' : '• Setimbang dengan sekitar (ΔT = 0)';
+    }
+  }
+
   // Update Telemetri Waktu Proses Simulasi (t)
   const displayTimeEl = document.getElementById('displayTime');
   const displayTimeSubEl = document.getElementById('displayTimeSub');
   if (displayTimeEl) {
-    const totalSec = Math.floor(state.simTime);
+    const totalSec = Math.max(0, Math.floor(state.simTime));
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
     const ss = String(totalSec % 60).padStart(2, '0');
     displayTimeEl.textContent = `${mm}:${ss}`;
   }
   if (displayTimeSubEl) {
     const unitSec = currentLang === 'en' ? 'sec' : 'detik';
-    displayTimeSubEl.textContent = `${state.simTime.toFixed(1)} ${unitSec}`;
+    displayTimeSubEl.textContent = `${Math.max(0, state.simTime).toFixed(1)} ${unitSec}`;
   }
 
   // Update Status Legenda Segmen Grafik Berdasarkan Zat
@@ -4577,8 +4881,6 @@ function resetQuiz() {
 }
 
 // --- MISI LABORATORIUM & LEMBAR TUGAS ISIAN SINGKAT ---
-let missionKeysVisible = false;
-
 function switchMissionTab(tab) {
   sound.playClick();
   const tabSteps = document.getElementById('missionTabContentSteps');
@@ -4645,6 +4947,7 @@ function checkMissionAnswers() {
   let correctCount = 0;
   const total = 10;
   const lang = currentLang;
+  const isQCorrect = [];
 
   for (let i = 1; i <= total; i++) {
     const input = document.getElementById(`taskInput${i}`);
@@ -4658,8 +4961,10 @@ function checkMissionAnswers() {
       return normVal === normAns || (normVal.length >= 3 && normVal.includes(normAns));
     });
 
+    isQCorrect[i] = isCorrect;
+
     input.classList.remove(
-      'border-slate-300', 'dark:border-slate-700',
+      'border-slate-300', 'dark:border-slate-700', 'dark:border-slate-600',
       'border-emerald-500', 'border-rose-400',
       'bg-emerald-50', 'dark:bg-emerald-950/40',
       'bg-rose-50', 'dark:bg-rose-950/40',
@@ -4673,6 +4978,28 @@ function checkMissionAnswers() {
     } else {
       input.classList.add('border-rose-400', 'bg-rose-50', 'dark:bg-rose-950/40', 'text-rose-700', 'dark:text-rose-300');
     }
+  }
+
+  // Update status badge per pertanyaan: hanya menunjukkan Benar atau Salah
+  const setBadge = (id, isCorrect, prefix) => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.classList.remove('hidden');
+    if (isCorrect) {
+      badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1';
+      badge.innerHTML = `<i data-lucide="check" class="w-2.5 h-2.5"></i> ${prefix ? prefix + ': ' : ''}${lang === 'en' ? 'Correct' : 'Benar'}`;
+    } else {
+      badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 flex items-center gap-1';
+      badge.innerHTML = `<i data-lucide="x" class="w-2.5 h-2.5"></i> ${prefix ? prefix + ': ' : ''}${lang === 'en' ? 'Incorrect' : 'Salah'}`;
+    }
+  };
+
+  setBadge('statusBadgeQ1', isQCorrect[1], lang === 'en' ? 'Melt' : 'Leleh');
+  setBadge('statusBadgeQ2', isQCorrect[2], lang === 'en' ? 'Boil' : 'Didih');
+  setBadge('statusBadgeQ3', isQCorrect[3], lang === 'en' ? 'Motion' : 'Gerak');
+  setBadge('statusBadgeQ4', isQCorrect[4], lang === 'en' ? 'Spacing' : 'Jarak');
+  for (let i = 5; i <= 10; i++) {
+    setBadge(`statusBadgeQ${i}`, isQCorrect[i], '');
   }
 
   const score = correctCount * 10;
@@ -4690,54 +5017,27 @@ function checkMissionAnswers() {
       bannerColor = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200';
       bannerIcon = 'check-circle-2';
       bannerMsg = lang === 'en' 
-        ? `🎉 <strong>Outstanding!</strong> Perfect score! You have completely mastered melting point, boiling point, particle dynamics, and all 6 phase changes.`
-        : `🎉 <strong>Luar Biasa!</strong> Nilai Sempurna! Kamu telah menguasai konsep titik leleh, titik didih, pergerakan partikel, dan 6 proses perubahan wujud dengan tepat.`;
+        ? `🎉 <strong>Outstanding!</strong> All 10 answers are correct (100%)! You have thoroughly mastered melting point, boiling point, particle dynamics, and all 6 phase change terms.`
+        : `🎉 <strong>Luar Biasa!</strong> Semua 10 jawaban benar (100%)! Kamu telah menguasai konsep titik lebur, titik didih, pergerakan partikel, dan 6 proses perubahan wujud dengan tepat.`;
       if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
       sound.playChime();
     } else if (score >= 70) {
       bannerColor = 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200';
       bannerIcon = 'award';
       bannerMsg = lang === 'en'
-        ? `👏 <strong>Great job!</strong> ${correctCount} / 10 correct (${score}%). Review the red-highlighted fields or inspect the answer keys.`
-        : `👏 <strong>Bagus Sekali!</strong> ${correctCount} / 10 benar (${score}%). Periksa kembali bagian yang bertanda merah atau gunakan tombol Kunci Jawaban.`;
+        ? `👏 <strong>Great effort!</strong> ${correctCount} of 10 answers are correct (${score}%). Check the items marked in red (Incorrect) and try to adjust your answers!`
+        : `👏 <strong>Bagus!</strong> ${correctCount} dari 10 jawaban benar (${score}%). Periksa kembali jawaban yang bertanda merah (Salah) dan coba perbaiki ya!`;
     } else {
       bannerColor = 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200';
       bannerIcon = 'alert-triangle';
       bannerMsg = lang === 'en'
-        ? `💪 <strong>Keep going!</strong> ${correctCount} / 10 correct (${score}%). Review the lab missions in Tab 1 and test the simulation to verify!`
-        : `💪 <strong>Tetap Semangat!</strong> ${correctCount} / 10 benar (${score}%). Amati kembali langkah-langkah misi di Tab 1 dan coba di simulasi ya!`;
+        ? `💪 <strong>Keep going!</strong> ${correctCount} of 10 answers are correct (${score}%). Review the lab missions in Tab 1 and test the simulation again to find the right answers!`
+        : `💪 <strong>Tetap Semangat!</strong> ${correctCount} dari 10 jawaban benar (${score}%). Amati kembali langkah-langkah misi di Tab 1 dan coba lagi di simulasi ya!`;
     }
 
     banner.className = `p-3 rounded-lg border text-xs flex items-center gap-2.5 ${bannerColor}`;
     banner.innerHTML = `<i data-lucide="${bannerIcon}" class="w-4 h-4 flex-shrink-0"></i><div>${bannerMsg}</div>`;
     lucide.createIcons();
-  }
-}
-
-function toggleMissionKeys() {
-  sound.playClick();
-  missionKeysVisible = !missionKeysVisible;
-  const keyBoxes = [
-    document.getElementById('keyBoxQ1'),
-    document.getElementById('keyBoxQ2'),
-    document.getElementById('keyBoxQ5'),
-    document.getElementById('keyBoxQ6'),
-    document.getElementById('keyBoxQ7'),
-    document.getElementById('keyBoxQ8'),
-    document.getElementById('keyBoxQ9'),
-    document.getElementById('keyBoxQ10')
-  ];
-  keyBoxes.forEach(box => {
-    if (box) {
-      if (missionKeysVisible) box.classList.remove('hidden');
-      else box.classList.add('hidden');
-    }
-  });
-  const txtShowMissionKeys = document.getElementById('txtShowMissionKeys');
-  if (txtShowMissionKeys) {
-    txtShowMissionKeys.textContent = missionKeysVisible 
-      ? (currentLang === 'en' ? 'Hide Keys' : 'Sembunyikan Kunci')
-      : (currentLang === 'en' ? 'Answer Key' : 'Kunci Jawaban');
   }
 }
 
@@ -4756,12 +5056,16 @@ function resetMissionAnswers() {
       );
       input.classList.add('border-slate-300', 'dark:border-slate-700');
     }
+    const badge = document.getElementById(`statusBadgeQ${i}`);
+    if (badge) {
+      badge.innerHTML = '';
+      badge.className = 'hidden';
+    }
   }
   const scoreEl = document.getElementById('missionScoreVal');
   if (scoreEl) scoreEl.textContent = '0';
   const banner = document.getElementById('missionFeedbackBanner');
   if (banner) banner.classList.add('hidden');
-  if (missionKeysVisible) toggleMissionKeys();
 }
 
 function copyMissionSummary() {
@@ -4825,6 +5129,36 @@ document.addEventListener('DOMContentLoaded', () => {
       switchMissionTab('worksheet');
     }
 
+    if (urlParams.get('test') === 'correct') {
+      openModal('modalMisi');
+      switchMissionTab('worksheet');
+      const in1 = document.getElementById('taskInput1'); if (in1) in1.value = '0';
+      const in2 = document.getElementById('taskInput2'); if (in2) in2.value = '100';
+      const in3 = document.getElementById('taskInput3'); if (in3) in3.value = 'cepat';
+      const in4 = document.getElementById('taskInput4'); if (in4) in4.value = 'renggang';
+      const in5 = document.getElementById('taskInput5'); if (in5) in5.value = 'melebur';
+      const in6 = document.getElementById('taskInput6'); if (in6) in6.value = 'menguap';
+      const in7 = document.getElementById('taskInput7'); if (in7) in7.value = 'menyublim';
+      const in8 = document.getElementById('taskInput8'); if (in8) in8.value = 'membeku';
+      const in9 = document.getElementById('taskInput9'); if (in9) in9.value = 'mengembun';
+      const in10 = document.getElementById('taskInput10'); if (in10) in10.value = 'mengkristal';
+      checkMissionAnswers();
+    } else if (urlParams.get('test') === 'partial') {
+      openModal('modalMisi');
+      switchMissionTab('worksheet');
+      const in1 = document.getElementById('taskInput1'); if (in1) in1.value = '0';
+      const in2 = document.getElementById('taskInput2'); if (in2) in2.value = '80'; // sengaja salah
+      const in3 = document.getElementById('taskInput3'); if (in3) in3.value = 'cepat';
+      const in4 = document.getElementById('taskInput4'); if (in4) in4.value = 'rapat'; // sengaja salah
+      const in5 = document.getElementById('taskInput5'); if (in5) in5.value = 'melebur';
+      const in6 = document.getElementById('taskInput6'); if (in6) in6.value = 'menguap';
+      const in7 = document.getElementById('taskInput7'); if (in7) in7.value = 'membeku'; // sengaja salah
+      const in8 = document.getElementById('taskInput8'); if (in8) in8.value = 'membeku';
+      const in9 = document.getElementById('taskInput9'); if (in9) in9.value = 'mengembun';
+      const in10 = document.getElementById('taskInput10'); if (in10) in10.value = 'menyublim'; // sengaja salah
+      checkMissionAnswers();
+    }
+
     // Listener tombol Enter pada isian tugas misi
     for (let i = 1; i <= 10; i++) {
       const inp = document.getElementById(`taskInput${i}`);
@@ -4859,7 +5193,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initState = getInitialThermalState(state.initialTemp, state.mass);
     state.temp = initState.temp;
-    state.heatTotal = initState.heatTotal;
+    state.curveQ = initState.curveQ;
+    state.heatTotal = 0;
     state.meltProgress = initState.meltProgress;
     state.vaporProgress = initState.vaporProgress;
     syncTempDropdown(state.initialTemp);
@@ -4873,6 +5208,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     render();
+    if (urlParams.get('play') === '1' || urlParams.get('play') === 'true') {
+      togglePlayPause();
+    }
     requestAnimationFrame(loop);
     lucide.createIcons();
   } catch(e) {
