@@ -1168,11 +1168,12 @@ function getInitialThermalState(initT, mass) {
 // --- INISIALISASI MOLEKUL MIKROSKOPIS ---
 function initParticles() {
   state.particles = [];
-  for (let i = 0; i < 36; i++) {
-    const col = i % 6;
-    const row = Math.floor(i / 6);
-    const baseX = 6 + col * 7.5 + (row % 2) * 3.5;
-    const baseY = 4 + row * 4;
+  // Grid 8×5 = 40 partikel, disesuaikan untuk canvas 120×68
+  for (let i = 0; i < 40; i++) {
+    const col = i % 8;
+    const row = Math.floor(i / 8);
+    const baseX = 10 + col * 13.5 + (row % 2) * 6.5;
+    const baseY = 8 + row * 11.5;
     state.particles.push({
       x: baseX,
       y: baseY,
@@ -3416,8 +3417,8 @@ function renderBeaker() {
       const remFrac = Math.max(0, Math.min(1, mv.iceMass / mv.massG));
       const iceScale = Math.cbrt(remFrac);
       const massScale = Math.cbrt(state.mass / 0.1);
-      const baseW = 34 * massScale;
-      const baseH = 26 * massScale;
+      const baseW = 48 * massScale;
+      const baseH = 36 * massScale;
 
       const c3Scale = Math.max(0, (remFrac - 0.35) / 0.65) * iceScale;
       const c2Scale = Math.max(0, (remFrac - 0.12) / 0.88) * iceScale;
@@ -3720,15 +3721,15 @@ function renderMolecules() {
       if (isMolten) {
         p.x += p.vx * 2.2;
         p.y += p.vy * 2.2;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = '#fef08a';
       } else if (isSmelting) {
         if (idx % 2 === 0) {
           p.x += p.vx * 1.2;
           p.y += p.vy * 1.2;
-          if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-          if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+          if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+          if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
           mCtx.fillStyle = '#facc15';
         } else {
           p.x = p.baseX + (Math.random() - 0.5) * 1.2;
@@ -3743,7 +3744,7 @@ function renderMolecules() {
       }
 
       mCtx.beginPath();
-      mCtx.arc(p.x, p.y, 2.0, 0, Math.PI * 2);
+      mCtx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
       mCtx.fill();
     });
   }
@@ -3772,21 +3773,21 @@ function renderMolecules() {
       if (isBoiling) {
         p.x += p.vx * 3.2;
         p.y += p.vy * 3.2;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = '#f59e0b';
       } else if (isLiquid) {
         p.x += p.vx * 1.6;
         p.y += p.vy * 1.6;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = '#fbbf24';
       } else if (isMelting) {
         if (idx % 2 === 0) {
           p.x += p.vx * 1.1;
           p.y += p.vy * 1.1;
-          if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-          if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+          if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+          if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
           mCtx.fillStyle = '#fbbf24';
         } else {
           p.x = p.baseX + (Math.random() - 0.5) * 0.9;
@@ -3801,7 +3802,7 @@ function renderMolecules() {
       }
 
       mCtx.beginPath();
-      mCtx.arc(p.x, p.y, 2.0, 0, Math.PI * 2);
+      mCtx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
       mCtx.fill();
     });
   }
@@ -3867,8 +3868,8 @@ function renderMolecules() {
         if (idx % 2 === 0) {
           p.x += p.vx * 0.9;
           p.y += p.vy * 0.9;
-          if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-          if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+          if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+          if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
           mCtx.fillStyle = '#3b82f6';
         } else {
           p.x = p.baseX + (Math.random() - 0.5) * 0.6;
@@ -3878,26 +3879,26 @@ function renderMolecules() {
       } else if (isLiquid) {
         p.x += p.vx * 1.3;
         p.y += p.vy * 1.3;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = '#3b82f6';
       } else if (isBoiling) {
         const speedFactor = idx % 2 === 0 ? 3.6 : 1.5;
         p.x += p.vx * speedFactor;
         p.y += p.vy * speedFactor;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = idx % 2 === 0 ? '#f97316' : '#3b82f6';
       } else {
         p.x += p.vx * 3.8;
         p.y += p.vy * 3.8;
-        if (p.x < 3 || p.x > moleculeCanvas.width - 3) p.vx *= -1;
-        if (p.y < 3 || p.y > moleculeCanvas.height - 3) p.vy *= -1;
+        if (p.x < 5 || p.x > moleculeCanvas.width - 5) p.vx *= -1;
+        if (p.y < 5 || p.y > moleculeCanvas.height - 5) p.vy *= -1;
         mCtx.fillStyle = '#f97316';
       }
 
       mCtx.beginPath();
-      mCtx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
+      mCtx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
       mCtx.fill();
     });
   }
